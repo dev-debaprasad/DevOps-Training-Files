@@ -1,0 +1,153 @@
+Day 5 - 26th Setempber
+/* 1st Link An EC2 instance with github repo that will be cloned from another repo.
+   then Fire another EC2 instance and link with jenkins */
+
+@ Git-Clone Server @
+______________________
+
+# hostnamectl set-hostname gitClone-server.example.com
+# bash
+# # yum install git -y
+# cd .ssh/
+# ssh-keygen
+# cat .ssh/id_rsa.pub
+ > Copy the ssh key
+ > Go to Github > Profile > Settings > SSH and GPG keys > New SSH Key > Paste
+ > Create a repo and switch to SSH
+# mkdir /code
+# cd /code/
+# git init
+# git clone https://github.com/sanjayguruji/devops-mumbai.git
+#  ll
+#  cd devops-mumbai
+#  git remote -v
+#  git remote remove origin
+#  git add .
+#  git commit -m my-devops -a
+#  git branch -M main
+#  git remote add origin git@github.com:dev-debaprasad/Jenkins-Maven-01.git
+#  git push origin main
+
+@ Link GitHub Repo With Jenkins-Site @
+___________________________________
+
+-Github Page->repo->settings->webhooks->payload url(paste the public ip along with :8080/github-webhook/
+ > content type - application/json
+
+-Jenkins Page -> profile -> security -> Api token
+create > give name > copy then go to webhook and paste in secret and then save and reload > Webhook Should be ticked
+
+
+@ Pipeline Building @
+______________________
+
+->Goto Jenkins-server Terminal
+-># yum install maven -y
+-> then go to Jenkins site and install plugin
+⦁	GitHub integration
+⦁	maven integration
+⦁	deploy to container
+ -> Restart Jenkins 
+-> go to Jenkins site settings tool
+  -add Java and Mvn path (untick automatic installation)
+  -> goto Jenkins-server Terminal
+   # mvn -v
+ !! If error Occurs check whether you installed maven on jenkins terminal or not and also restart jenkins !!
+
+-> go to Jenkins site
+ -> Create a new job
+    - Maven Project
+     - paste Github link
+    - branch main
+⦁	Trigger - Build whenever a SNAPSHOT dependency is  built :uncheck
+⦁	GitHub hook trigger for GITScm polling :Check
+  Goals and options - clean install
+
+> HIT BUILD NOW
+
+SHOWING RESULTS OF SUCCESSFUL BUILD
+__________________________________
+# cd /var/lib/jenkins
+# ll
+# cd workspace
+# ll
+# cd Maven-Project-from-clone-01
+# ll
+# cd webapp
+# ll
+# cd target
+# ll
+
+@ TOMCAT SERVER CONFIGURATION @
+_______________________________
+
+Create new EC2 instance:
+us east 1a
+13gib t3
+New security group 8080
+
+# hostnamectl set-hostname tomcat.example.com
+# bash
+# yum install java\* -y
+# yum install wget -y
+# yum install wget
+# wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.109/bin/apache-tomcat-9.0.109.tar.gz
+# tar -xvzf apache-tomcat-9.0.109.tar.gz
+# ll
+# cd apache-tomcat-9.0.109
+# cd bin/
+# ll
+# chmod +x startup.sh
+# chmod +x shutdown.sh
+# ./startup.sh
+-> Copy Public Ip paste with :8080 to see Tomcat Default Page
+# ./shutdown.sh
+# cd ..
+# cd conf
+# vim tomcat-users.xml
+
+goto -> https://medium.com/@raguyazhin/step-by-step-guide-to-install-apache-tomcat-on-amazon-linux-120748a151a9
+ -> Copy
+Update user information in tomcat-users.xml
+\#Add below lines between <tomcat-users> tag
+
+<role rolename="manager-gui"/>
+<role rolename="manager-script"/>
+<role rolename="manager-jmx"/>
+<role rolename="manager-status"/>   
+<user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+<user username="deployer" password="deployer" roles="manager-script"/>
+<user username="tomcat" password="s3cret" roles="manager-gui"/>
+
+# cd . //apache-tomcat-9.0.109
+# find -name context.xml
+ output:
+ ./conf/context.xml
+ ./webapps/docs/META-INF/context.xml
+ ./webapps/examples/META-INF/context.xml
+ ./webapps/host-manager/META-INF/context.xml
+ ./webapps/manager/META-INF/context.xml
+
+->Now We have to comment out valve statement of last 3 files
+
+ # vim webapps/examples/META-INF/context.xml
+ # vim webapps/host-manager/META-INF/context.xml
+ # vim webapps/manager/META-INF/context.xml
+ 
+
+# cd bin/
+# ./startup.sh
+
+-> go to jenkins site
+ ->settings(Manage Jenkins) ->Security ->credentials -> Global credentials -> Add credentials -> userid and pass - deployer
+ ->Open the pipeline(Project) ->configuration->Build Setting->Post Build Actions ->select "deploy war file to container"
+ -> inside war file : "**/*.war" -> inside context path : "/"
+ -> Add Container > Tomcat 9.X
+ -> Then in next field : crendentials - deployer/***** tomcaturl - copy paste
+ -> Apply ->Save -> Build Now
+
+-> copy Tomcat server ip and open in a new tab then
+-> Manager App
+-> admin - admin
+
+
