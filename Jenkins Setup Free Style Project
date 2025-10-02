@@ -1,0 +1,98 @@
+Day 4 - 25th Setempber
+/* 1st Link An EC2 instance with github repo and push a sample file
+   then Fire another EC2 instance and link with jenkins */
+
+@ Git Server @
+______________
+#hostnamectl set_hostname git-server.example.com
+# yum install git -y
+# cd .ssh/
+# ssh-keygen
+# cat .ssh/id_rsa.pub
+ > Copy the ssh key
+ > Go to Github > Profile > Settings > SSH and GPG keys > New SSH Key > Paste
+ > Create a repo and switch to SSH
+# mkdir /code
+# cd /code/
+# git init
+# vim index.html
+# git add .
+# git  commit -m "1st commit" index.html
+# git branch -M main
+# git remote add origin <Github Repo SSH Link>
+# git push origin main
+
+
+@ Jenkins Server @
+__________________
+/*
+ useast 1a
+ Custom tcp Port 8080
+ t3.small 
+ 12 gib gp2
+*/
+
+#hostnamectl set-hostname jenkins.example.com
+#bash
+#  yum repolist all
+#  wget -O /etc/yum.repos.d/jenkins.repo     https://pkg.jenkins.io/redhat-stable/jenkins.repo
+#  yum repolist all
+#  rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+#  yum upgrade
+#  yum install java-21-amazon-corretto -y
+#  yum install wget -y
+#  yum install Jenkins -y
+#  yum install jenkins -y
+#  systemctl start Jenkins
+#  systemctl start jenkins
+#  systemctl enable jenkins
+#  systemctl status jenkins
+-> Then Go To EC2 Instace page and copy the public Ip > paste it on a new tab with :8080 prefix
+copy the command
+paste it in  terminal to get the password
+# cat /var/lib/jenkins/secrets/initialAdminPassword
+-> Paste the password in jenkins page > install Suggested Plugins
+-> Complete the setup > Save & Continue
+-> Then Jenkins Page will open But with "Built-in-node offline" Error
+-> Click on Built-in-node
+-> df -h : shows disk info
+we have to increase the tempfs space to solve this issue
+# sudo mount -o remount,size=2G /tmp // temporary
+# df -h
+# vim /etc/fstab
+> tmpfs /tmp tmpfs defaults,noatime,mode=1777,size=2G 0 0
+# systemctl daemon-reload
+# reboot (don't in prod env)
+# systemctl restart jenkins
+
+//Now We'll Link Jenkins With Github
+
+-Github Page->repo->settings->webhooks->payload url(paste the public ip along with :8080/github-webhook/
+ > content type - application/json
+
+-Jenkins Page -> profile -> security -> Api token
+create > give name > copy then go to webhook and paste in secret and then save and reload
+
+
+@ create pipeline @
+___________________
+
+Goto Jenkins hompage
+⦁	New Item
+⦁	-> Give name
+⦁	-> Freestyle project
+⦁	-> Source code management
+⦁	copy git repo url
+⦁	change to */main
+!! Make sure git is installed in jenkins instace - #yum install git !!
+
+>Then Hit Build Now On Jenkins Page
+>Now Go TO Jenkins Instance
+# cd /var/lib/jenkins
+# ll
+# cd workspace/
+# ll
+# cd FreeStyle_01
+# ll
+# cat index.html
+
