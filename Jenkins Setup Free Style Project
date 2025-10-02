@@ -96,3 +96,14 @@ Goto Jenkins hompage
 # ll
 # cat index.html
 
+!!!NOTE!!!
+***********
+@ Change IP of Jenkins @
+________________________
+!! In Case Jenkins Terminal Freezes or for any reason you have to restart the instance !!
+
+# cd /var/lib/Jenkins
+# ll
+# vim jenkins.model.JenkinsLocationConfiguration.xml
+-> Replace the existing ip
+# systemctl restart Jenkins
