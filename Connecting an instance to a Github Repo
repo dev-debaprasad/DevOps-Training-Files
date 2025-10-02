@@ -1,0 +1,21 @@
+Day 4 - 24th September
+
+@ EC2 Instance @
+__________________
+
+#yum install git -y
+# cd .ssh/
+# ssh-keygen
+# cat .ssh/id_rsa.pub
+ > Copy the ssh key
+ > Go to Github > Profile > Settings > SSH and GPG keys > New SSH Key > Paste
+ > Create a repo and switch to SSH
+# mkdir /code
+# cd /code/
+# git init
+# vim index.html
+# git add .
+# git  commit -m "1st commit" index.html
+# git branch -M main
+# git remote add origin <Github Repo SSH Link>
+# git push origin main
