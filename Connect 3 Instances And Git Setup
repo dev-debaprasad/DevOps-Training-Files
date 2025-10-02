@@ -1,0 +1,184 @@
+Day 4 - 24th September
+/* Here We created 3 EC2 instances - 1.Git Server
+                                    2.Dev-one Server
+                                    3.Dev-two Server
+ and then made connection between these with Git-Server instance being setup as the main Git server where files will be pushed.
+//Pre-requisites
+ change security policy > all icmp ipv4
+
+*/
+
+
+@ Git-Server @
+____________
+# hostnamectl set-hostname git-server.example.com
+# bash
+# hostname
+#  yum update -y
+#  yum install git -y
+#  mkdir /code
+#  cd /code/
+#  git init --bare
+#  hostname
+#  ip a s
+#  vim /etc/hosts 
+-> Then paste the " ip <space> hostname " of the 3 instances
+-> :wq
+#  ping git-server.example.com
+#  ping dev-one.example.com
+#  ping dev-two.example.com
+
+
+@ Dev-Server-One @
+____________
+# hostnamectl set-hostname dev-one.example.com
+# bash
+# hostname
+#  yum update -y
+#  yum install git -y
+#  mkdir /dev-one-code
+#  cd /dev-one-code/
+#  git init
+#  ip a s
+#  hostanme
+#  vim /etc/hosts
+-> Then paste the " ip <space> hostname " of the 3 instances
+-> :wq
+#  ping git-server.example.com
+#  ping dev-one.example.com
+#  ping dev-two.example.com
+#  cd
+#  cd .ssh/
+#  ll
+#  cd
+#  ssh-keygen
+#  cat .ssh/id_rsa.pub
+ -> Then Copy The SSH Key 
+ -> Go to Git-Server
+    # cd
+    # cd .ssh/
+    # vim authorized_keys
+    -> Paste The SSh Key
+#  ssh root@git-server.example.com // This is test the connection
+#  exit
+# cd /dev-one-code
+# git remote add origin root@git-server.example.com:/code
+-> Go to Git-server
+  # cd
+  # cd /code
+  # git log
+
+-> Go to dev-server-one
+# l.
+# vim index.html  "Hello dev one here"
+# cat index.html
+# git add index.html
+# git commit -m dev-one-1 index.html
+# git push origin master
+
+-> Go to Git-server
+  # git log
+
+//Dev-one Takes Leave from Here
+
+// Dev-one Takes Charge from Here
+git pull origin master
+cat index.html
+vim index.html
+git add .
+git commit -m dev-one-2 index.html
+git push origin master
+
+
+@ Dev-Server-Two @
+____________
+# hostnamectl set-hostname dev-two.example.com
+# bash
+# hostname
+#  yum update -y
+#  yum install git -y
+#  mkdir /dev-two-code
+#  cd /dev-two-code/
+#  git init
+#  ip a s
+#  hostanme
+#  vim /etc/hosts
+-> Then paste the " ip <space> hostname " of the 3 instances
+-> :wq
+#  ping git-server.example.com
+#  ping dev-one.example.com
+#  ping dev-two.example.com
+#  cd
+#  cd .ssh/
+#  ll
+#  cd
+#  ssh-keygen
+#  cat .ssh/id_rsa.pub
+ -> Then Copy The SSH Key 
+ -> Go to Git-Server
+    # cd
+    # cd .ssh/
+    # vim authorized_keys
+    -> Paste The SSh Key
+#  ssh root@git-server.example.com // This is test the connection
+#  exit
+#  cd /dev-two-code
+#  git clone root@git-server.example.com:/code
+#  ll
+#  cd code
+#  ll
+//Dev Two Takes Charge From Here
+#  cat index.html
+#  vim index.html
+#  git status
+#  git add .
+#  git status
+#  git commit -m dev-two-1 index.html
+#  git remote -v
+#  git push origin master
+-> Go to Git-server
+  # git log
+-> Go to dev-server-two
+#  vim index.html
+#  git add .
+#  git commit -m dev-two-2 index.html
+#  git push origin master
+-> Go to Git-server
+  # git log
+
+// Dev one takes charge from here.
+
+//Dev Two checks dev-one's work
+# git pull origin master
+# cat index.html
+
+
+% Branching &
+ @ Dev-server-one @
+# cd dev-one-code
+# git branch
+# git branch stage
+# git branch
+# git checkout stage
+# git branch
+# ll
+# vim index.html
+# git add .
+# git commit -m lti-devops index.html
+# git remote -v
+# git checkout master
+# ll
+# cat index.html
+# git merge stage
+# cat index.html
+# git branch devops
+# git checkout devops
+# git branch
+# ll
+# vim index.html
+# git checkout master
+# ll
+# cat index.html
+# git merge stage
+# git branch -d devops
+# git branch -d stage
