@@ -1,0 +1,258 @@
+/*
+Day 10 - 3rd October
+Lab 1: VPC - Public Private
+
+
+ ---------------------------------------------
+| VISR -- VPS -> IGW -> Subnet -> Route Table |
+ ---------------------------------------------
+
+VLSM calculator -- 10.0.0.0 /16 250 150
+
+-> Go to AWS > VPC > Create VPC
+ > Name tag - Custom-VPC
+ > VPC settings - VPC Only
+ > IPv4 CIDR - 10.0.0.0/16
+ > Create VPC
+
+-> Go to AWS > Internet gateways > Create internet gateway
+ > Name tag - my-igw
+ > Create internet gateway
+ > select my-igw > Actions > Attach to VPC > Select VPC - Custom-VPC  > Attach internet gateway
+
+-> Go to AWS > Subnets > create subnet
+ > VPC ID - select Custom-VPC
+ > Subnet 1
+   > Subnet name - Public-subnet
+   > Availability Zone - us-east-1a
+   > IPv4 subnet CIDR block - 10.0.0.0/24
+ > Add New Subnet
+  > Subnet 2
+    > Subnet name - Private-subnet
+    > Availability Zone - us-east-1b
+    > IPv4 subnet CIDR block - 10.0.1.0/24
+ > Create subnet
+
+
+-> Go to AWS > Route tables > Create route table
+ > Name - Public-RT
+ > VPC  - Custom-VPC
+ > Create route table
+ > Select Public-RT
+  > edit routes > Add route > 0.0.0.0/0 Target - Internet Gateway > Select my-igw > Save changes
+  > Subnet associations > Edit subnet associations > Select Public Subnet > Save associations
+
+-> Create an EC2 instance
+ > Name - dev-server-public
+ > Key pair name - custom-vpc
+ > Network settings > edit
+  > VPC - (Custom-VPC)
+  > Subnet - Public-subnet
+  > Auto-assign public IP - Enable
+ > Create Security Group
+  > Name
+  > SG Rule - HTTP - Anywhere
+            - All ICMP - IPv4 - Anywhere
+
+ > Launch Instance
+ > Select dev-server-public > Connect
+
+@ dev-server-public @
+____________________
+
+$ ping google.com - This should work
+$ ping <private IP> - This should also work
+
+#yum install httpd -y
+#rpmquery httpd
+# cd /var/www/html/
+#echo "This is my apache server" > index.html
+#yum install httpd -y
+#cd /var/www/html/
+#echo "This is my apache server" > index.html
+#systemctl start httpd
+#systemctl enable httpd
+-> Copy Public IP > Paste along with :80
+
+-> Go to AWS > NAT gateways > Create NAT gateway // This is to enable private-server to access the internet
+ > Name - Private-Nat-Gateway
+ > Subnet - Public-subnet
+ > Allocate Elastic IP
+ > Create NAT gateway
+
+-> Go to AWS > Route tables > Create route table
+ > Create Another route table
+ > Name - Private-RT
+ > VPC  - Custom-VPC
+ > Create route table
+  > Edit routes > Add route > 0.0.0.0/0 Target - NAT Gateway > Select Private-NAT-Gateway > Save changes
+  > Subnet associations > Edit subnet associations > Select Private Subnet > Save associations
+
+-> Create an EC2 instance
+ > Name - database-server-private
+ > Key pair name - custom-vpc
+ > Network settings > edit
+  > VPC - (Custom-VPC)
+  > Subnet - Private-subnet
+  > Auto-assign public IP - Disable
+ > Select Existing Security Group
+ 
+ > Launch Instance
+ > Go to dev-server-public terminal
+---accessing private through public server:
+> copy keypair contents from downloads
+# sudo su -
+# vim custom-vpc.pem
+ >Paste the contents then :wq
+# chmod 400 custom-vpc.pem
+-> Then Connect the database-server-private instace on EC2 page > Copy the ssh and paste in the dev-server-public-terminal
+#ping google.com - This should work
+
+________________________________________________________________________________________________________________________________
+
+
+Lab 2: INTERNET SHARING USING PUBLIC IP
+
+________________________________________________________________________________________________________________________________
+
+Go to Ohio Region
+
+VLSM calculator -- 20.0.0.0 /16 250 150
+
+-> Go to AWS > VPC > Create VPC
+ > Name tag - Custom-VPC-ohio
+ > VPC settings - VPC Only
+ > IPv4 CIDR - 20.0.0.0/16
+ > Create VPC
+
+-> Go to AWS > Internet gateways > Create internet gateway
+ > Name tag - my-igw-ohio
+ > Create internet gateway
+ > select my-igw > Actions > Attach to VPC > Select VPC - Custom-VPC-ohio  > Attach internet gateway
+
+-> Go to AWS > Subnets > create subnet
+ > VPC ID - select Custom-VPC-ohio
+ > Subnet 1
+   > Subnet name - Public-subnet-ohio
+   > Availability Zone - us-east-2a
+   > IPv4 subnet CIDR block - 20.0.0.0/24
+ > Create subnet
+
+-> Go to AWS > Route tables > Create route table
+ > Name - Public-RT-ohio
+ > VPC  - Custom-VPC-ohio
+ > Create route table
+ > Select Public-RT-ohio
+  > edit routes > Add route > 0.0.0.0/0 Target - Internet Gateway > Select my-igw-ohio > Save changes
+  > Subnet associations > Edit subnet associations > Select Public Subnet > Save associations
+
+-> Create an EC2 instance
+ > Name - prod-server-public
+ > Key pair name - custom-vpc-ohio
+ > Network settings > edit
+  > VPC - (Custom-VPC-ohio)
+  > Subnet - Public-subnet-ohio
+  > Auto-assign public IP - Enable
+ > Create Security Group
+  > Name
+  > SG Rule - HTTP - Anywhere
+            - All ICMP - IPv4 - Anywhere
+
+ > Launch Instance
+ > Select prod-server-public > Connect
+
+@ prod-server-public @
+____________________
+
+$ ping google.com - This should work
+$ ping <private IP> - This should also work
+
+@ dev-server-public @
+____________________
+-- 1st exit to Public Server from Private Server
+-- cat > abc.txt
+ 	HELLO.THIS IS N.VIRGINIA.
+-- vim /etc/ssh/sshd_config
+ 	permitRootLogin yes
+ 	passwordAuthentication yes
+-- systemctl start sshd
+-- systemctl enable sshd
+-- passwd root
+-- cd .ssh/
+-- ssh-keygen
+-- cat id_rsa.pub -> Copy
+ THEN IN PROD SERVER
+ # cd .ssh/
+ # vim authorized_keys ->Paste
+ --
+-- scp abc.txt root@public ip of ohio machine:/tmp
+ 	secure copy = scp
+
+@ prod-server-public @
+____________________
+
+-- vim /etc/ssh/sshd_config
+ 	permitRootLogin yes
+ 	passwordAuthentication yes
+-- systemctl start sshd
+-- systemctl enable sshd
+-- cd .ssh/
+-- ssh-keygen
+-- cat id_rsa.pub -> Copy
+ THEN IN dev-SERVER
+ # cd .ssh/
+ # vim authorized_keys ->Paste
+
+-- cd /tmp
+-- ll
+-- //File should be there
+-- passwd root
+-- cat > xyz.txt // in root
+ 	HELLO.THIS IS OHIO
+-- scp xyz.txt root@public ip of N.Virginia machine:/tmp
+
+
+---
+
+LAB 3 - VPC PEERING
+Now the file transfer is happening via Internet, lets do it via VPC peering
+
+---
+N.Virgina
+
+left menu -- peering connection -- devops-to-prod -- VPC requester of that region -- same account & other region -- VPC of Ohio region & VPC accepter ID (Copy the VPC ID of Ohio machine)
+
+
+Accept request of peering connection in Ohio machine
+
+N. Virginia:
+ping private Ip of Ohio
+
+route table entries in both the regions
+N.virginia -- 20.0.0.0/16 -- peering conn -- save
+Ohio -- 10.0.0.0/16 -- peering conn -- save
+
+N.virgnia
+ping 20.0.0.88 -- ping happening
+cat > new1.txt
+scp new1.txt root@prvateipof-ohio:/tmp
+
+
+Ohio:
+ping 10.0.0.82
+
+cat > new2.txt
+scp abc.txt root@prvateipof-virginia:/tmp
+
+
+
+!!HOW TO TERMINATE SESSION!!
+
+->Terminate Instances
+->NAT gateways > Delete
+->Peering connection > Delete
+->Eip>Release
+->VPC>Delete
+->Internet Gateways > Detach
+
+*/
