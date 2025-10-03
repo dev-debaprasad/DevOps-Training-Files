@@ -1,0 +1,99 @@
+Day 9 : 1st October Elastic Load Balancing
+An Ecommerce Site's Servers are going to be down. How to fix this.
+
+Create 3 instances with port 80 enabled.
+
+____________
+@ Web-one @
+____________
+
+#yum install httpd -y
+#cd /var/www/html/
+#echo "This is my server-one" > index.html
+#ll
+#systemctl start httpd
+#systemctl enable httpd
+#curl http://localhost
+
+____________
+@ Web-two @
+____________
+
+#yum install httpd -y
+#cd /var/www/html/
+#echo "This is my server-one" > index.html
+#ll
+#systemctl start httpd
+#systemctl enable httpd
+#curl http://localhost
+
+____________
+@ Web-three @
+____________
+
+#yum install httpd -y
+#cd /var/www/html/
+#echo "This is my server-one" > index.html
+#ll
+#systemctl start httpd
+#systemctl enable httpd
+#curl http://localhost
+
+->Copy Public IP of the instances and paste along with :80
+
+->Target Group > Collection of servers
+> Create Target group
+ > target type - instance
+ > my LBTG
+ > Next > Select instances > Include
+
+Load Balancers > Create App Load Balancer
+ > give name
+ > Scheme : Internet-facing
+ > Availability Zones and subnets : select subnets
+ > Security Group
+ > Listening port 80
+ > Target Group
+
+Copy DNS Name > Paste in new tab
+-> Stop any Instance -> The Load Blancer will do it's work
+
+______________
+Auto Scaling
+______________
+
+
+> Create Launch Template 
+ name -asg template
+ desc - this is for testing
+
+key pair
+subnet 1 a
+sg group
+advance > User Data >
+
+>create Auto Scaling Group
+name > template > next > VPC > subnets : a,b,c > Balanced best effort > next
+> Load Balancer
+> NO VPC Lattice
+
+Health Checks > Elastic Load balancing health checks
+
+Desired Capacity : 2
+
+Scaling > min - 1 : max - 5
+
+Automatic scaling - optional
+> Target tracking
+ target value 75
+> instance warmup - 180
+
+Add notifications
+
+> next > next
+
+Create autoscaling group
+Remember to delete autoscaling group
+Then Delete Instance
+
+
