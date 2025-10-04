@@ -83,4 +83,31 @@ _______________________
 #yum install nfs-utils
 #mkdir /prod-data
 
+________________________________
+!!!REPLICATION OF FILE SYSTEM!!!
+________________________________
+
+->1st you have to create a file system in another region in Amazon EFS Page
+->Then Amazon > File system > (Your efs) > Replication
+ > Create Replication
+
+ -> Create new Security Group:  NFS allowing 2049
+ -> EFS - network -manage -- delete existing SGs and add  Created SG to 3 zones and save
+
+
+
+-> Then in Ohio region create an EC2 instance
+I've used Amazon Linux AMI
+#sudo su -
+#rpmquery nfs-utils (pre-installed)
+#mkdir /test-data
+-> EFS -- Attach -- mount Via DNS -- choose NFS Client
+ ->copy the NFS mount point -- change the mount point dir
+
+#cd /test-data
+#ll
+Now files should be there
+
+
+
 
