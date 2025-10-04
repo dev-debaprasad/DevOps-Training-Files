@@ -1,0 +1,55 @@
+//Our team is working with N. Virginia & they have some Important data. We want same data in another region// -- 
+
+-> Fire an EC2 Instance(dev-server) : 10Gib gp2
+__________________________
+->Elastic Block Store Menu
+___________________________
+ -: Volume - name(root-vol) - gp2 10Gib
+> create volume -: name(data-vol) - gp2 5Gib
+
+->Action ->Attach Volume ->Select Instance
+
+->Open the terminal using ssh
+#df -h
+#mkdir /data
+#lsblk
+#mkfs.ext4 /dev/nvme1n1
+#mount /dev/nvme1n1 /data/
+#cd /data
+#touch pooja.txt{1..100}
+
+___________________________
+Create snapshot (Of Disk)
+________________________
+
+-> in AWS site go to Elastic Block Store select Snapshots
+-> select volume
+-> launch/create
+-> Select snapshot
+
+->Create duplicate session
+->Change the region to Ohio
+
+->Go to N. Verginia EC2 page
+->Go to Snapshot Menu then select the snapshot->action->copy option->then select destination as Ohio
+
+->Go to Ohio EC2 page
+
+->Fire an EC2 instance
+
+-> snapshot menu
+-> Select snapshot
+-> Create Volume From Snapshot
+-> select zone
+-> Go to volumes
+-> New Volume would be present as available
+-> select that volume click action
+-> attach volume
+
+#df -h
+#lsblk
+#mkdir /Prod-data-ohio
+#mount /dev/nvme1n1 /Prod-data-ohio
+#cd /Prod-data-ohio/
+#ll
+
