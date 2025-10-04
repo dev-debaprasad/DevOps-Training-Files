@@ -1,0 +1,86 @@
+There are multiple Users wokring in a team but servers are available in different region. How can they access info. simultaneously.
+!!!EFS!!!
+__________________________________
+
+##Create File System (Amazon EFS)##
+___________________________________
+ EFS works on port no - 2049
+
+->Amazon EFS > File systems
+ ->create file system
+ -> name : my-efs
+
+-> Fire 3 EC2 instances with name - Dev-server - subnet - 1a
+                                  - Test-server- subnet - 1b
+                                  - Prod-server- subnet - 1c
+              - SG  SSH port 22 should be allowed
+
+-> Create new Security Group:  NFS allowing 2049
+-> EFS - network -manage -- delete existing SGs and add Created SG to 3 zones and save
+
+________________
+@ Dev-Server @
+________________
+
+#sudo su -
+#rpmquery nfs-utils (pre-installed)
+#mkdir /data
+-> EFS -- Attach -- mount Via DNS -- choose NFS Client
+ ->copy the NFS mount point -- change the mount point dir
+ ->Paste in the terminal change the mount point dir
+
+
+#cd /data
+#touch Tanjiro.txt{1..10}
+#ll
+
+________________
+@ Test-Server @
+________________
+
+#sudo su -
+#rpmquery nfs-utils (pre-installed)
+#mkdir /Test-data
+-> EFS -- Attach -- mount Via DNS -- choose NFS Client
+ ->copy the NFS mount point -- change the mount point dir
+ ->Paste in the terminal change the mount point dir
+
+#cd /Test-data
+#touch Zenitsu.txt{1..10}
+#ll
+
+________________
+@ Prod-Server @
+________________
+
+#sudo su -
+#rpmquery nfs-utils (pre-installed)
+#mkdir /Prod-data
+-> EFS -- Attach -- mount Via DNS -- choose NFS Client
+ ->copy the NFS mount point -- change the mount point dir
+ ->Paste in the terminal change the mount point dir
+
+#cd /Prod-data
+#touch Inosuke.txt{1..10}
+#ll
+
+
+
+_______________________
+Commands for Other AMIs
+_______________________
+
+@ Test-Server Instance(Ubuntu) @
+
+#sudo su -
+#apt update -y
+#apt install nfs-common
+#mkdir /Test-data
+
+@ Prod-Server Instance(Redhat) @
+
+#sudo su -
+#yum install nfs-utils
+#mkdir /prod-data
+
+
