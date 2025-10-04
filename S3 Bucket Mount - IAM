@@ -1,0 +1,62 @@
+Create Bucket
+
+aws > Search S3 > Create Bucket
+ > General Purpose > Give Bucket Name > Object Ownership - ACLs enabled > Block Public Access settings for this bucket >Uncheck : Block all public access > acknowledge
+Create Bucket
+> Then Upload files and then give permissions to each file
+
+_____________________________
+aws s3 bucket mount on linux
+_________________________
+
+AWS IAM
+
+>Create user
+
+->s3 user(user name)
+->attach policies directly > s3 Full Access
+-> goto user > Security Credentials > Access Keys > Create access key > Use case : CLI
+->download .csv file
+
+>Create EC2 Instance
+
+install amazon cli on Linux
+(Google Search)
+
+#curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+#unzip awscliv2.zip
+#sudo ./aws/install
+#aws --version
+#aws configure
+ > default region name : us-east-1
+ > default output format : table
+#ls -a
+
+#cd .aws/
+#ll
+#cat config
+#cat credentials
+#cd
+#sudo yum install automake fuse fuse-devel gcc-c++ git libcurl-devel libxml2-devel make openssl-devel
+#git clone https://github.com/s3fs-fuse/s3fs-fuse.git
+#cd s3fs-fuse/
+#ll
+#./autogen.sh
+#./configure --prefix=/usr --with-openssl
+#make
+#sudo make install
+#cd
+#which s3fs
+#touch /etc/passwd-s3fs
+#ll -d /etc/passwd-s3fs
+#chmod 640 /etc/passwd-s3fs
+#ll -d /etc/passwd-s3fs
+#vim /etc/passwd-s3fs   =>{ put access key : secrete key }   and save
+#s3fs (bucket-name) /mnt -o passwd_file=/etc/passwd-s3fs
+#df -h
+#cd /mnt/
+#ll
+#touch Gojo{1..100}.txt
+
+
+
