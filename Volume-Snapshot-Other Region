@@ -15,6 +15,17 @@ ___________________________
 #lsblk
 #mkfs.ext4 /dev/nvme1n1
 #mount /dev/nvme1n1 /data/
+
+!!!!!!!!!
+blkid -> copy UUID
+UUID=06ab3daa-e3a6-4c1e-b447-31e0d65b5cc1       /data   ext4    defaults        0 0
+vim /etc/fstab -> Paste   | Permanent Mounting
+reboot instance
+again open terminal
+# cd /data/
+# ll
+
+!!!!!
 #cd /data
 #touch pooja.txt{1..100}
 
