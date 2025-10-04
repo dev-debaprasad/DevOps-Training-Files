@@ -17,4 +17,4 @@ Resources:
       KeyName: !Ref KeyName
 
 >Next > Specify stack details > Give name > Parameters > KeyName - Select Cloud Form > Next > Next > Submit
-> Go to EC2 instances and open using sshkey
+> Go to EC2 instances and open using sshkey !! Check SG SSH port 22 enabled or not
