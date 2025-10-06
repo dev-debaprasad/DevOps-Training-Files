@@ -1,0 +1,201 @@
+/*
+DAY 11 - 6th Oct 
+DOCKER
+
+
+Create EC2 instance - Docker host
+-> Subnet - 1a
+-> SG -
+-> 12Gib
+--> Launch Instance
+
+Terminal
+-> Copy SSH and paste in Terminal
+# hostnamectl set-hostname docker.example.com
+# rpmquery docker
+# yum install docker | Nahi krna but kiya becoz repo down tha
+# y|N  -->         Depends on situation
+
+/*
+
+-> Google : Docker installation // Most of the time yeh krna hai becoz har AMI pe available nhi hoga
+  > rhel
+  > Set up the repo
+# sudo dnf -y install dnf-plugins-core
+# sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+# yum repolist all             
+# sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+*/
+
+>-->
+# docker info
+# systemctl start docker
+# systemctl enable docker
+# docker info
+# docker --help
+# docker ps -a : shows no of containers running
+# docker info
+# vim /etc/docker
+# vim /etc/docker-runtime.d
+# docker images
+# docker pull ubuntu // this will pull the latest image by default
+# docker images
+# docker pull nginx
+# docker pull httpd
+# docker image ls
+# docker run -it --name web-app ubuntu:latest /bin/bash
+# ls
+# cat /etc/os-release
+# apt update -y
+# apt install apache2 -y
+# cd /var/www/html
+# echo "this is my web-app running on docker" > index.html
+# ll
+# cd
+# service apache2 start
+# exit // will stop the container
+# docker start web-app
+# docker attach web-app
+ > CTRL P + Q
+# docker ps
+# docker inspect web-app | less
+# ip a s
+# curl http://172.17.0.2
+
+
+-> Creating another container to try container restart
+
+# docker run -it ubuntu:latest /bin/bash
+# apt update
+# apt install apache2 -y
+# cd /var/www/html/
+# echo "Hello all greetings of the day" > index.html
+# cd
+# service apache2 start
+ > CTRL P+Q
+# docker ps -a
+# docker inspect <containder ID>
+# curl http://172.17.0.2
+# docker restart <containder ID/Name>
+# curl http://172.17.0.3
+curl: (7) Failed to connect to 172.17.0.3 port 80 after 0 ms: Could not connect to server
+# docker attach <containder ID/Name>
+# service apache2 start
+ > CTRL P+Q
+# curl http://172.17.0.3
+
+
+//After Lunch
+
+//Deleting a container
+
+!!Bad practice!!
+# docker ps -a
+# docker kill e4b57fe3af96
+# docker ps -a
+# docker rm e4b57fe3af96
+# docker ps -a
+
+!!Good Practice!!
+# docker stop <id of container>
+# docker ps -a
+# docker rm <id of container>
+# docker ps -a
+
+//Assign name
+# docker rename <name/id of container> <new name>
+# docker ps -a
+
+// Creating another docker
+# docker run -it --name thank-you ubuntu:latest /bin/bash
+> inside container now
+# apt update -y
+# apt install apache2 -y
+# cd /var/www/html/
+# echo "This is my web application" > index.html
+# cd
+# service apache2 start
+# CTRL p+q
+# docker ps -a
+# docker inspect thank-you | less
+ > Shift G : end of document
+# curl http://172.17.0.3
+
+
+# docker ps -a
+# docker images
+# docker run -d --name apache-app httpd
+# docker ps -a
+# curl http://172.17.0.5
+# docker exec -it apache-app /bin/bash
+ > inside container
+# cd htdocs/
+# ls
+# cat index.html
+# cat >> index.html
+ > Hello all have a good day.
+# cd
+
+!! Take Another Instance !!
+# docker inspect apache-app | less // check the IP
+# curl http://172.17.0.5
+
+// Google - how to create image from running docker container
+
+ # docker ps -a
+ # docker commit <id> new-apache
+ # docker images
+ # docker run -it new-apache
+ > CTRL C + P
+ # docker run -d new-apache
+ # docker ps -a
+ # docker inspect <id> | less
+ > SHIFT G
+ # curl http://
+
+ # docker attach <id>
+ > won't give console as it is in the backend
+  > CTRL C
+
+/////////////////////////////////
+Port In Docker
+# docker run -it --name devops -p 8080:80 ubuntu:latest /bin/bash
+# apt update -y
+# apt install apache2 -y
+# cd /var/www/html/
+# echo "THis is devops app" > index.html
+# service apache2 start
+ > CTRL p+q
+# docker inspect devops | less
+# curl http://
+-> Copy public ip from EC2
+-> paste with 8080 // accesible to the world
+
+# docker commit <id> devops-image // creating image
+# docker images
+# docker run -it --name prod-app -p 8081:80 ubuntu /bin/bash
+# apt update -y
+# apt install apache2 -y
+# cd /var/www/html/
+# echo "THis is Prod app" > index.html
+# service apache2 start
+ > CTRL p+q
+# docker ps -a
+
+# docker logs <name> // Give logs
+# docker ps -a
+
+!!!!!!!!!!!!!!
+ Zip Image
+!!!!!!!!!!!!!!
+
+# docker save assign2-img:latest | gzip > assign2_image_zip.tar.gz
+# ll
+# cp assign2_image_zip.tar.gz /tmp/
+# cd /tmp/
+# ll
+# docker import assign2_image_zip.tar.gz
+# docker tag 726f3ff9cdce new_image_from_zip:Extracted
+#
+*/
