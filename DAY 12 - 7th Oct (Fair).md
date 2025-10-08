@@ -1,0 +1,544 @@
+## Kubernetes(Fair)
+
+
+
+> Launch 3 EC2 instances : Ubuntu 22
+
+ 	1.control-plane : c7i-flex.large : us e 1a : New SG
+
+ 	k8s\_sg : 15gib
+
+ 	2.node-one : t3.small : us-east-1d : SG - k8s\_sg : 12 	gib
+
+ 	3.node-one :          : us-east-1a :
+
+SG - https://kubernetes.io/docs/reference/networking/ports-and-protocols/
+
+
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+@ control-plane @
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+
+
+$ sudo su -
+
+\# hostnamectl set-hostname controller.example.com
+
+\# bash
+
+ 
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-installtion-with-containerd-on-ubuntu%2024.04
+
+ 
+
+apt update -y
+
+apt install containerd -y
+
+systemctl start containerd
+
+systemctl enable containerd
+
+sudo modprobe overlay
+
+sudo modprobe br\_netfilter
+
+
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/K8S%20installation%20with%20Container-D%20using%20Redhat-9
+
+
+
+cat > /etc/modules-load.d/kubernetes.conf << EOF
+
+br\_netfilter
+
+ip\_vs
+
+ip\_vs\_rr
+
+ip\_vs\_wrr
+
+ip\_vs\_sh
+
+overlay
+
+EOF
+
+
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-installtion-with-containerd-on-ubuntu%2024.04
+
+
+
+cat > /etc/sysctl.d/kubernetes.conf << EOF
+
+net.ipv4.ip\_forward = 1
+
+net.bridge.bridge-nf-call-ip6tables = 1
+
+net.bridge.bridge-nf-call-iptables = 1
+
+EOF
+
+
+
+sysctl --system
+
+mkdir -p /etc/containerd
+
+containerd config default | sudo tee /etc/containerd/config.toml
+
+vim /etc/containerd/config.toml
+
+//-> :se nu -> line 139 - true
+
+
+
+systemctl restart containerd
+
+sudo apt-get update
+
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+
+
+echo 'deb \[signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+
+
+
+
+sudo apt-get update
+
+sudo apt-get install -y kubelet kubeadm kubectl
+
+sudo systemctl enable --now kubelet
+
+
+
+kubeadm config images pull
+
+kubeadm init
+
+
+
+/\*
+
+-> Your Kubernetes control-plane has initialized successfully!
+
+
+
+To start using your cluster, you need to run the following as a regular user:
+
+
+
+  mkdir -p $HOME/.kube
+
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+
+
+
+!! Important !!
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+
+
+kubeadm join 172.31.8.222:6443 --token n1de1m.6vlj9viu31k5kfks \\
+
+        --discovery-token-ca-cert-hash sha256:abd8813bbccaa5c90d25115890e36d3cdaee44286365787e316afb38c53e6972
+
+
+
+!!!change the above as below and save in a text document!!!
+
+
+
+kubeadm join 172.31.8.222:6443 --token n1de1m.6vlj9viu31k5kfks --discovery-token-ca-cert-hash sha256:abd8813bbccaa5c90d25115890e36d3cdaee44286365787e316afb38c53e6972
+
+
+
+\*/
+
+
+
+mkdir -p $HOME/.kube
+
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+
+
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+@ node-one @
+
+\_\_\_\_\_\_\_\_\_\_\_\_
+
+
+
+$ sudo su -
+
+\# hostnamectl set-hostname node-one.example.com
+
+\# bash
+
+ 
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-installtion-with-containerd-on-ubuntu%2024.04
+
+ 
+
+apt update -y
+
+apt install containerd -y
+
+systemctl start containerd
+
+systemctl enable containerd
+
+sudo modprobe overlay
+
+sudo modprobe br\_netfilter
+
+
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/K8S%20installation%20with%20Container-D%20using%20Redhat-9
+
+
+
+cat > /etc/modules-load.d/kubernetes.conf << EOF
+
+br\_netfilter
+
+ip\_vs
+
+ip\_vs\_rr
+
+ip\_vs\_wrr
+
+ip\_vs\_sh
+
+overlay
+
+EOF
+
+
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-installtion-with-containerd-on-ubuntu%2024.04
+
+
+
+cat > /etc/sysctl.d/kubernetes.conf << EOF
+
+net.ipv4.ip\_forward = 1
+
+net.bridge.bridge-nf-call-ip6tables = 1
+
+net.bridge.bridge-nf-call-iptables = 1
+
+EOF
+
+
+
+sysctl --system
+
+mkdir -p /etc/containerd
+
+containerd config default | sudo tee /etc/containerd/config.toml
+
+vim /etc/containerd/config.toml
+
+//-> :se nu -> line 139 - true
+
+
+
+systemctl restart containerd
+
+sudo apt-get update
+
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+
+
+echo 'deb \[signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+ 
+
+sudo apt-get update
+
+sudo apt-get install -y kubelet kubeadm kubectl
+
+sudo systemctl enable --now kubelet
+
+
+
+kubeadm join 172.31.8.222:6443 --token n1de1m.6vlj9viu31k5kfks --discovery-token-ca-cert-hash sha256:abd8813bbccaa5c90d25115890e36d3cdaee44286365787e316afb38c53e6972
+
+
+
+-> Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
+
+
+
+
+
+---
+
+@ node-two @
+
+---
+
+
+
+$ sudo su -
+
+\# hostnamectl set-hostname node-two.example.com
+
+\# bash
+
+ 
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-installtion-with-containerd-on-ubuntu%2024.04
+
+ 
+
+apt update -y
+
+apt install containerd -y
+
+systemctl start containerd
+
+systemctl enable containerd
+
+sudo modprobe overlay
+
+sudo modprobe br\_netfilter
+
+
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/K8S%20installation%20with%20Container-D%20using%20Redhat-9
+
+
+
+cat > /etc/modules-load.d/kubernetes.conf << EOF
+
+br\_netfilter
+
+ip\_vs
+
+ip\_vs\_rr
+
+ip\_vs\_wrr
+
+ip\_vs\_sh
+
+overlay
+
+EOF
+
+
+
+//-> https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-installtion-with-containerd-on-ubuntu%2024.04
+
+
+
+cat > /etc/sysctl.d/kubernetes.conf << EOF
+
+net.ipv4.ip\_forward = 1
+
+net.bridge.bridge-nf-call-ip6tables = 1
+
+net.bridge.bridge-nf-call-iptables = 1
+
+EOF
+
+
+
+sysctl --system
+
+mkdir -p /etc/containerd
+
+containerd config default | sudo tee /etc/containerd/config.toml
+
+vim /etc/containerd/config.toml
+
+//-> :se nu -> line 136 - true
+
+
+
+systemctl restart containerd
+
+sudo apt-get update
+
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+
+
+echo 'deb \[signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+ 
+
+sudo apt-get update
+
+sudo apt-get install -y kubelet kubeadm kubectl
+
+sudo systemctl enable --now kubelet
+
+
+
+kubeadm join 172.31.8.222:6443 --token n1de1m.6vlj9viu31k5kfks --discovery-token-ca-cert-hash sha256:abd8813bbccaa5c90d25115890e36d3cdaee44286365787e316afb38c53e6972
+
+
+
+-> Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
+
+
+
+---
+
+@ control-plane @
+
+---
+
+\##########################################################################################
+
+Configure Pod Network
+
+curl https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml -O
+
+
+
+kubectl apply -f calico.yaml
+
+
+
+\# kubectl get pod -A
+
+\# kubectl get nodes -o wide
+
+
+
+##### After 2nd Coffee Break
+
+
+
+\# kubectl get node
+
+\# kubectl get node -o wide
+
+\# kubectl get pod
+
+
+
+\# kubectl get ns
+
+\# kubectl get pod -n kube-system
+
+
+
+// Don't deploy any pods in "kube-system" namespace
+
+
+
+-> google > pod
+
+ > Official documentation : https://kubernetes.io/docs/concepts/workloads/pods/
+
+
+
+\# mkdir /my-k8s-code/
+
+\# cd /my-k8s-code/
+
+\# vim firstpod.yaml
+
+
+
+"
+
+ 
+
+ apiVersion: v1
+
+ kind: Pod
+
+ metadata:
+
+  name: web-app
+
+ spec:
+
+  containers:
+
+  - name: apache
+
+    image: nginx:1.14
+
+    ports:
+
+    - containerPort: 80
+
+
+
+"
+
+
+
+\# ll
+
+\# kubectl get pod
+
+\# kubectl apply -f firstpod.yaml
+
+\# kubectl get pod
+
+\# kubectl get pod -o wide
+
+\# kubectl describe pod web-app
+
+
+
+\# kubectl delete pod web-app
+
+\# kubectl get pod
+
+\# kubectl api-resources
+
+\# kubectl apply -f firstpod.yaml
+
+\#
+
+\#
+
+\#
+
+\#
+
+\#
+
+\#
+
+
+
+\# kubectl describe pod web-app | grep -i Controlled
+
