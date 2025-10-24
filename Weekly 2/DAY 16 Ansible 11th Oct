@@ -1,0 +1,245 @@
+DAY 16 - 11th October
+Ansible
+________________
+
+ANS-Controller
+_______________
+SG - ALL ICMP iPv4
+Create an EC2 Instance - Redhat - T3.Micro -12Gib
+
+# hostnamectl set-hostname ans-controller.example.com
+# bash
+# yum update -y
+# python --version
+# hostname
+# ip  a s
+# vim /etc/hosts
+> paste ip<space>hostname (In every Machine)
+# ping
+# ssh-keygen
+# cd .ssh/
+# ls
+# cat <id_.pub>
+> Copy the content
+> paste in ans-one
+
+# ssh root@ANS-One.example.com
+exit
+# ssh root@ANS-Two.example.com
+exit
+
+# yum install ansible-core
+
+/*
+## yum install pip
+## pip install ansible-core
+##
+*/
+
+# ansible --version
+# cd /etc/ansible/
+# ll
+
+# ansible --version
+ if config file = none
+ then solution:
+
+# cd /etc
+# mkdir /ansible
+# cd /ansible
+# vim ansible.cfg
+> https://github.com/sanjayguruji/ansible-code/blob/main/ansible.cfg
+> Copy the content
+> paste inside vim
+:wq
+
+# vim hosts
+>
+[dev-server]
+ans-one.example.com
+
+[test-server]
+ans-two.example.com
+ 
+:wq
+
+# ping ans-one.example.com
+# ping ans-two.example.com
+# ansible all --list-hosts
+# ansible all -m ping
+# ansible all -m ping -a 'data=hello'
+# ansible ans-one.example.com -m ping -a 'data=devops'
+# ansible ans-two.example.com -m ping -a 'data=prod'
+# vim hosts
+>
+[dev-server]
+ans-one.example.com
+ans-2.example.com
+ans-3.example.com
+
+[test-server]
+ans-two.example.com
+ 
+:wq
+
+# ansible dev-server --list-hosts
+# ansible dev-server -m ping
+# vim hosts
+>
+[dev-server]
+ans-one.example.com
+
+[test-server]
+ans-two.example.com
+ 
+:wq
+
+# vim hosts
+[dev-server]
+ans-one.example.com
+
+[test-server]
+ans-two.example.com
+ 
+[bank-of-america]
+server[1:100].example.com
+
+:wq
+
+# ansible all --list-host
+# vim hosts
+[dev-server]
+ans-one.example.com
+
+[test-server]
+ans-two.example.com
+ 
+[bank-of-america]
+server[1:100].example.com
+
+[city-bank]
+192.168.1.[1:200]
+:wq
+
+# ansible all --list-host
+
+####################
+
+# ansible all -m user -a 'name=Aarav uid=1100 home=/india shell=/bin/bash state=present'
+> TO check go to another instance and hit 
+# tail /etc/passwd
+
+# ansible all -m user -a 'name=Aarav state=absent'
+
+# ansible all -m yum -a 'name=httpd state=present'
+# ansible all -m systemd -a 'name=httpd state=started enabled=true'
+
+# ansible-doc -l > help
+# ansible-doc user
+# ansible-doc dnf
+> Shift G to quit
+
+
+###########
+After Lunch
+###########
+
+# ansible all -m
+# ansible all -m file -a 'dest=/tmp
+# ansible all -m copy -a 'src=/etc/fstab dest=/tmp'
+> Check in any of two nodes
+
+# ansible all -m copy -a "dest=/tmp/index.html content='i love devops'"
+> Check in any of the two nodes
+
+
+________
+ANS-One
+________
+
+Create an EC2 Instance - Amazon Linux - T3.Micro -10Gib
+
+# hostnamectl set-hostname ans-one.example.com
+# bash
+# hostname
+# ip  a s
+# vim /etc/hosts
+> paste ip<space>hostname (In every Machine)
+# ping
+
+> Paste id\\\\\\\_pub here
+# cd .ssh/
+# ll
+# vim authorized_keys
+> paste from ANS-controller here
+
+#
+#
+#rpmquery httpd
+# systemctl status httpd
+_______
+ANS-Two
+_______
+Create an EC2 Instance - Amazon Linux - T3.Micro -10Gib
+
+# hostnamectl set-hostname ans-two.example.com
+# bash
+# hostname
+# ip  a s
+# vim /etc/hosts
+> paste ip<space>hostname (In every Machine)
+# ping
+
+> Paste id\\\\\\\\\\\\\\\_pub here
+# cd .ssh/
+# ll
+# vim authorized_keys
+> paste from ANS-controller here
+
+# tail /etc/passwd/user
+#
+
+Playbook
+
+ANS-Controller
+______________
+
+# yum install vim
+
+# vim my-first-playbook.yaml
+>
+ ---
+ - name: doing some task
+   hosts: all
+   tasks:
+
+ 	- name: creating some users
+ 	  user:
+ 	    name: sweta
+ 	    uid: 1101
+ 	    home: /ltimindtree
+ 	    shell: /bin/bash
+
+ 	- name: installed httpd
+ 	  dnf:
+ 	     name: httpd
+ 	     state: latest
+ 	- name: httpd service started
+ 	  systemd:
+ 	     name: httpd
+ 	     state: started
+ 	     enabled: true
+ 	- name: installed cifs
+ 	  dnf:
+ 	     name: cifs-utils
+ 	     state: present
+...
+
+:wq
+
+
+# cat my-first-playbook.yaml
+# ansible-playbook my-first-playbook.yaml --syntax-check
+# ansible-playbook my-first-playbook.yaml -C
+# ansible-playbook my-first-playbook.yaml
+# -> verify everything in either of two machines
