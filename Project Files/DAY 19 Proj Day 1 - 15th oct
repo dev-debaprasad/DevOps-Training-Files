@@ -1,0 +1,506 @@
+Day 19
+Project Day 1 : 15-10-25
+
+
+Publish Over SSH - Plugin
+
+________________
+ @ dev-server @
+________________
+
+Launch an EC2 Instance - Amazon Linux 6.1
+⦁	dev-server
+⦁	T3.Micro
+⦁	Us-east-1a
+⦁	Security Group - Custom TCP 8080
+⦁	10 Gib gp3
+
+-> copy ssh and fire in a terminal
+
+++++++++++++
+ dev-server
+++++++++++++
+
+# hostnamectl set-hostname dev-server.example.com
+# bash
+// Clone the repo from github : https://github.com/sanjayguruji/shourjo-10743365.git
+# yum install git
+# git clone https://github.com/sanjayguruji/shourjo-10743365.git
+# ll
+# cd <Folder-name>
+# git add.
+# git status
+// Create a new repo
+ name - devops-sept-25
+
+# git commit -m "first commit" -a
+# git branch -M main
+# git remote -v
+# git remote remove origin
+# git remote -v
+# git remote add origin (SSH)
+# ssh-keygen
+# cd .ssh
+# cat id_rsa.pub
+ > Copy the key
+ > Take duplicate of github repo page
+ > in duplicate tab > Profile > settings > SSH > New SSH Key > name - dev-server-ket > paste > add SSH
+
+# ll
+# cd <folder-name>
+# git add.
+# git status
+# git push origin main --force
+> Refresh the git repo page 
+
+__________________
+@ jenkins-server @
+__________________
+
+⦁	Amazon Linux 6.1
+⦁	c7i-flex-large
+⦁	us-east-1a
+⦁	SG - port 8080
+⦁	15 gp3
+
+-> copy ssh and fire in a terminal
+
+++++++++++++++
+jenkins-server
+++++++++++++++
+
+https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-on-AWS/
+
+# hostnamectl set-hostname jenkins-server.example.com
+# bash
+# yum install wget
+# sudo yum update –y
+# sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+# sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+# sudo yum upgrade
+# sudo yum install java-21-amazon-corretto -y
+# sudo yum install jenkins -y
+# systemctl enable jenkins
+# systemctl start jenkins
+# systemctl status jenkins
+
+// Copy the public IP nad paste along with 8080
+// Copy the command from jenkins site
+// paste in the terminal using cat
+# cat
+// then copy the password from the terminal and paste in jenkins site
+// install suggested plugins
+// then setup user name & password
+// Start using Jenkins
+// add webhook in github repo
+ -> paste the address of jenkins
+// in jenkins site create api token to get secret which is required in webhook addition
+
+# yum insatll maven -y
+# mvn -v
+// IN jenkins site add plugins - Maven Integration
+ 				- Github Integration
+ 				- Deploy to container
+ 				- Publish Over SSH
+ Restart Jenkins
+
+ > Hit Settings
+  > Tools > ADD JDK > paste java path from jenkins terminal
+          > Maven > Paste maven path from jenkins terminal
+
+# yum install git -y
+
+// Jenkins New Item
+ > name - devops-pro
+  - Maven project
+
+Add git repo url
+ -main
+ -uncheck snapshot
+ - goals - clean install
+ - apply and save
+
+HIT Build Now And Pray
+
+# cd /var/lib/jenkins
+# ll
+# cd workspace
+# cd devops-pro/
+# ll
+# cd webapp/
+# ll
+# cd target/
+# ll
+
+_________________
+@ Tom-cat-server @
+_________________
+
+// Create another instance and create another SG with 8080 port
+// 15 gib gp3
+
+# hostnamectl set-hostname tomcat.example.com
+# bash
+# yum install java* -y
+
+/*
+
+// if less space go to aws site volumes then select the required volume and then edit and then in terminal
+ # lsblk
+ # growpart /dev/nvme0n1
+ XFS
+
+*/
+
+# yum install wget -y
+download tomcat 9
+
+# wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.111/bin/apache-tomcat-9.0.111.tar.gz
+https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.111/bin/apache-tomcat-9.0.111.tar.gz
+# tar -xvzf <filename>
+# cd apache-tomcat
+# ll
+# cd bin
+# chmod +x startup.sh
+# chmod +x shutdown.sh
+# ./startup.sh
+# ./shutdown.sh
+# ./startup.sh
+
+# cd ..
+# cd conf/
+# vim tomcat-users.xml
+goto -> https://medium.com/@raguyazhin/step-by-step-guide-to-install-apache-tomcat-on-amazon-linux-120748a151a9
+ -> Copy
+Update user information in tomcat-users.xml
+\#Add below lines between <tomcat-users> tag
+
+<role rolename="manager-gui"/>
+<role rolename="manager-script"/>
+<role rolename="manager-jmx"/>
+<role rolename="manager-status"/>   
+<user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+<user username="deployer" password="deployer" roles="manager-script"/>
+<user username="tomcat" password="s3cret" roles="manager-gui"/>
+
+# cd . //apache-tomcat-9.0.109
+# find -name context.xml
+ output:
+ ./conf/context.xml
+ ./webapps/docs/META-INF/context.xml
+ ./webapps/examples/META-INF/context.xml
+ ./webapps/host-manager/META-INF/context.xml
+ ./webapps/manager/META-INF/context.xml
+
+->Now We have to comment out valve statement of last 3 files
+ # vim webapps/examples/META-INF/context.xml
+ # vim webapps/host-manager/META-INF/context.xml
+ # vim webapps/manager/META-INF/context.xml
+ 
+
+# cd bin/
+# ./startup.sh
+
+-> go to jenkins site
+ ->settings(Manage Jenkins) ->Security ->credentials -> Global credentials -> Add credentials -> userid and pass - deployer
+ ->Open the pipeline(Project) ->configuration->Build Setting->Post Build Actions ->select "deploy war  to container"
+ -> inside war file : "**/*.war" -> inside context path : "/"
+ -> Add Container > Tomcat 9.X
+ -> Then in next field : crendentials - deployer/***** tomcaturl - copy paste
+ -> Apply ->Save -> Build Now
+
+-> copy Tomcat server ip and open in a new tab then
+-> Manager App
+-> admin - admin
+
+[dev-server]
+
+# cd shourjo
+# cd webapp
+# vim index.jsp
+# git status
+# git add .
+# git commit -m "second commit" -a
+# git push origin main
+
+[Jenkins Site]
+> Build Now
+
+> Check in tomcat page by refreshing
+
+
+____________________________________
+____________________________________
+
+
+Can change the name of the dev-server to docker, will push from github from now on.(Optional)
+
+__________
+@ docker @
+__________
+Create new EC2 instance
+
+++++++++
+ docker
+++++++++
+# hostnamectl set-hostname docker.example.com
+# yum install docker
+# systemctl start docker
+# systemctl enable docker
+# ssh-keygen
+# cd .ssh/
+# ll
+# cat id_rsa.pub
+
+
++++++++
+jenkins
++++++++
+
+# ssh-keygen
+# vim /etc/ssh/sshd_config
+# systemctl restart sshd
+# systemctl enable sshd
+# paswd root
+ redhat
+ redhat
+
+
++++++++
+docker
++++++++
+
+# vim /etc/ssh/sshd_config
+# systemctl restart sshd
+# systemctl enable sshd
+# paswd root
+ redhat
+ redhat
+
+[Jenkins site]
+
+> Manage Jenkins / System
+ > SSH Servers
+  Name : jenkins
+  hostname : private IP of jenkins instance
+  username : root
+ Advanced
+  use password tick
+  redhat
+  test configuration button
+  apply - save
+
+
+  > Manage Jenkins / System
+ > SSH Servers
+  Name : docker
+  hostname : private IP of docker instance
+  username : root
+  use password tick
+  redhat
+  test configuration button
+  apply - save
+
++++++++
+jenkins
++++++++
+
+# cd /var/lib/jenkins/workspace
+# ll
+# cd devops-pro
+# ll
+# cd webapp/
+# ll
+# cd target/
+# ll
+
++++++++
+jenkins
++++++++
+go inside jenkins project directory
+# pwd
+> copy the absolute path
+
+# ssh-copy-id root@<public ip a s of docker>
+
++++++++
+docker
++++++++
+# cd
+# mkdir /image // do before rsync
+
+[jenkins site]
+project / configuration
+post-build
+ send build artifacts over ssh
+ Jenkins
+ Hostname : ip a s of jenkins terminal
+ source file: /
+ in Exec command
+  >
+    rsync -avh /var/lib/jenkins/workspace/devops-pro/* root@<public IP a s of docker>:/image(name of creating dir)
+
+
+apply save build now
+
+
+# cd /image/
+
+
+
+_____________________
+_____________________
+
+ECR
+
+Create an ECR
+> AWS > ECR > Public registry > Repositories > Create public repo > content type - select all
+
+View push command
+
+
++++++++++
+ Docker
++++++++++
+
+# aws configure
+
+AWS > IAM > Create User > policies admin access
+> Create access key
+
+# paste access key ID
+# paste Secret access key
+# us-east-1
+# table
+
+View push command
+# 1st command - log in
+# cd /image/
+# 2nd command - build image
+# 3rd command - assign tag
+# 4th command - push image to ECR
+
+> AWS > ECR > Image > image will be there
+
+
+
+__________________________________________________
+__________________________________________________
+
+EKS
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/Eks-cluster-creating
+
+> AWS > EC2 > eks-node > AWS Linux > SG add inbound rules from site(search for ports in Kubernetes doc)
+
+____________
+@ eks-node @
+____________
+create EC2 instance
+# hostnamectl set-hostname eks-node.example.com
+# bash
+
+> AWS > EKS > create user role 
+: AmazonEC2ContainerRegistryFullAccess
+: AmazonEKSClusterPolicy
+: IAMFullAccess
+> AWS > EC2 > select eks-node > actions > security > modify user roles
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/Eks-cluster-creating
+
+execute from line number 6 to 19 except line 12 and 16
+
+
+# ssh-keygen
+# eksctl create cluster --name my-cluster-proj --region us-east-1 --version 1.32 --vpc-public-subnets <subnet-ExampleID1>,<subnet-ExampleID2> --without-nodegroup
+
+#  eksctl create nodegroup \
+  --cluster <my-cluster-proj> \
+  --region <us-east-1> \
+  --name my-node-group \
+  --node-ami-family Ubuntu2204 \
+  --node-type <t3.small> \
+  --subnet-ids <subnet-0e4d2c1464cab4fce>,<subnet-07e39ea6701d7cae3> \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 4 \
+  --ssh-access \
+  --ssh-public-key /root/.ssh/id_rsa.pub 
+# kubectl get node
+# ll
+https://github.com/sanjayguruji/devops-mumbai
+# vim deployment.yaml
+> paste the content of regapp-deploy.yml from repo
+ > replace container: regapp : image url: paste ECR image URL
+# vim service.yaml
+ >paste the content of service.yml from repo
+
+# vim /etc/ssh/sshd_config
+ permitrootlogin yes
+ password authentication yes
+# systemctl restart sshd
+# systemctl enable sshd
+# ip a s
+# paaswd root
+ redhat
+
+[Jenkins site]
+> manage jenkins > System > SSH Server > Add > 
+ > hostname : private IP of eks node
+ > username : root
+ > password : redhat
+ > test config
+
+> project > configuration
+ > add server
+ Docker
+ > in exec command -
+ 
+ cd /image
+ paste all commands from view push commands in ECR
+
+> project > configuration
+ > add server
+ EKS
+ > in exec command -
+ 
+kubectl delete -f deployment.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+
+
++++++++++++++
+jenkins
+++++++++++++
+
+# ssh-copy-id root@<ip of eks node terminal>
+
+build now in jenkins site
+++++++++++
+eks node
++++++++++
+
+kubectl get pod
+ > No pods available
+
+[Jenkis]
+Buid Now
+
+++++++++++
+eks node
++++++++++
+
+# kubectl get pod
+# kubectl get svc
+> copy id of load balancer
+ paste in browser :8080/webapp/
+
+[jenkins]
+
+Triggers : check GitHub hook trigger for GITScm polling
+
+[GitHub Repo]
+
+webapp/src/main/webapp/index.jsp
