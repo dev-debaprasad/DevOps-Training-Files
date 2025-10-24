@@ -1,0 +1,191 @@
+Day 21
+Project Day 3 : 17-10-25
+
+Do upto docker using Project Day 2
+Then Do the Following
+EKS
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/Eks-cluster-creating
+
+> AWS > EC2 > eks-node > AWS Linux > SG add inbound rules from site(search for ports in Kubernetes doc)
+
+____________
+@ eks-node @
+____________
+create EC2 instance
+# hostnamectl set-hostname eks-node.example.com
+# bash
+
+> AWS > EKS > create user role 
+: AmazonEC2ContainerRegistryFullAccess
+: AmazonEKSClusterPolicy
+: IAMFullAccess
+> AWS > EC2 > select eks-node > actions > security > modify user roles
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/Eks-cluster-creating
+
+execute from line number 6 to 19 except line 12 and 16
+
+
+# ssh-keygen
+# eksctl create cluster --name my-cluster-proj --region us-east-1 --version 1.32 --vpc-public-subnets <subnet-ExampleID1>,<subnet-ExampleID2> --without-nodegroup
+
+#  eksctl create nodegroup \
+  --cluster my-cluster-proj \
+  --region us-east-1 \
+  --name my-node-group \
+  --node-ami-family Ubuntu2204 \
+  --node-type t3.small \
+  --subnet-ids subnet-040bbad1086f2f1e7,subnet-0e4d2c1464cab4fce  \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 4 \
+  --ssh-access \
+  --ssh-public-key /root/.ssh/id_rsa.pub 
+# kubectl get node
+# ll
+https://github.com/sanjayguruji/devops-mumbai
+# vim deployment.yaml
+> paste the content of regapp-deploy.yml from repo
+ > replace container: regapp : image url: paste ECR image URL
+# vim service.yaml
+ >paste the content of service.yml from repo
+
+# vim /etc/ssh/sshd_config
+ permitrootlogin yes
+ password authentication yes
+# systemctl restart sshd
+# systemctl enable sshd
+
+# paaswd root
+ redhat
+# ip a s
+
+[Jenkins site]
+> manage jenkins > System > SSH Server > Add > EKS
+ > hostname : private IP of eks node
+ > username : root
+ > password : redhat
+ > test config
+
+> Project > Pipeline
+
+
+"
+pipeline {
+    agent any
+
+    tools {
+        maven 'mvn' // Ensure this is configured in Jenkins Global Tool Configuration
+    }
+
+    environment {
+        TOMCAT_USER = 'deployer'
+        TOMCAT_PASS = 'deployer'
+        TOMCAT_HOST = '44.197.207.109'  // Change this
+        TOMCAT_PORT = '8080'
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/dev-debaprasad/devops-sept-25.git' // Change This
+            }
+        }
+
+        stage('Build with Maven') {
+            steps {
+                sh 'mvn clean package -Dmaven.test.failure.ignore=true'
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                sh '''
+                    curl -u $TOMCAT_USER:$TOMCAT_PASS \
+                    --upload-file webapp/target/webapp.war \
+                    "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=/sampleapp&update=true"
+                '''
+            }
+        }
+
+        stage('Deploy to Docker Host') {
+            steps {
+                sshPublisher(publishers: [
+                    sshPublisherDesc(
+                        configName: 'docker', // Ensure this is configured in manage Jenkins System
+                        transfers: [
+                            sshTransfer(
+                                sourceFiles: '**/*',
+                                removePrefix: '',
+                                remoteDirectory: 'lti',
+                                // Change The execCommande
+                                execCommand: '''
+                                    cd lti
+                                    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 916756161674.dkr.ecr.us-east-1.amazonaws.com
+                                    docker build -t my-ecr .
+                                    docker tag my-ecr:latest 916756161674.dkr.ecr.us-east-1.amazonaws.com/my-ecr:latest
+                                    docker push 916756161674.dkr.ecr.us-east-1.amazonaws.com/my-ecr:latest
+                                '''
+                            )
+                        ]
+                    )
+                ])
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                sshPublisher(publishers: [
+                    sshPublisherDesc(
+                        configName: 'eks', // Ensure this is configured in manage jenkins system
+                        transfers: [
+                            sshTransfer(
+                                sourceFiles: 'deployment.yaml,service.yaml',
+                                remoteDirectory: '',
+                                removePrefix: '',
+                                execCommand: '''
+                                    set -ex
+                                    aws eks update-kubeconfig --region us-east-1 --name my-cluster-proj // change this
+                                    kubectl delete -f deployment.yaml // Remove this line before 1st build and then add again
+                                    kubectl apply -f deployment.yaml
+                                    kubectl apply -f service.yaml
+                                    kubectl rollout status deployment/regapp-deployment
+                                '''
+                            )
+                        ],
+                        usePromotionTimestamp: false,
+                        verbose: true
+                    )
+                ])
+            }
+        }
+    }
+
+    post {
+        success {
+            junit '**/target/surefire-reports/TEST-*.xml'
+            archiveArtifacts artifacts: '**/target/*.war', fingerprint: true
+        }
+    }
+}
+
+"
+
+> Save > Build Now
+
+Then in @ eks-node @
+# kubectl get svc
+copy EXTERNAL IP till 8080
+Paste in a new chrome tab like
+http://a43838e064cc64f4ebb8c4ff113e0fb2-1337029440.us-east-1.elb.amazonaws.com:8080/webapp
+
+[Jenkins]
+Project > Triggers > GitHub hook trigger for GITScm polling
+
+[github]
+ webapp > src/main/webapp > index.jsp
+ make changes in the jsp file > commit
+[Jenkins}
+ Build will happen automatically
+ then check the external ip tab copied from @ eks-node @
