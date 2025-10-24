@@ -1,0 +1,358 @@
+DAY 17 - 13th October
+Ansible Contd.
+
+Setup Ansible Environment with - ans-controller
+                                 ans-one
+ 				                         ans-two
+
+Perform Play-Books
+_______
+VARS
+_______
+Creating EC2 instance using Ansible
+https://github.com/sanjayguruji/ansible-code/blob/main/Create-AWS-Ec2.yaml
+
+// Terminate ans-one and ans-two and work with
+ans-controller
+
+//inside anisible dir
+
+-> # yum install awscli
+# yum install pip
+# pip install boto3
+# aws configure // IAM  - Admin access
+# vim hosts
+>
+ 
+[localhost]
+localhost
+localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+
+# vim creds.yaml
+> 
+aws_access_key: <add own>
+aws_secret_key: <add own>
+
+# vim ec2.yaml
+https://github.com/sanjayguruji/ansible-code/blob/main/Create-AWS-Ec2.yaml
+
+>
+
+---
+- name: creating ec2 instance
+  hosts: localhost
+  vars_files:
+
+      - creds.yaml
+  tasks:
+        - name: creating Ec2 instance via Ansible
+          amazon.aws.ec2_instance:
+            name: k8s-master
+            instance_type: t3.micro
+            image_id: ami-052064a798f08f0d3
+            vpc_subnet_id: subnet-08b6065a123cdaf14
+            security_group: sg-0a35908e41f9ebf34
+            key_name: ansible
+            region: us-east-1
+            count: 1
+            state: present
+
+
+# ansible-galaxy collection install amazon.aws
+# ansible-playbook ec2.yaml
+
+//Providing Explicit Creds
+
+# export AWS_ACCESS_KEY_ID=<access id>
+# export AWS_SECRET_ACCESS_KEY=<secret key>
+# export AWS_DEFAULT_REGION=
+
+Configure Apache
+in root
+
+/*
+# yum install httpd
+# cd /var/www/html/
+# echo "This is my apache server" > index.html
+# systemctl start httpd
+# systemctl enable httpd
+*/
+
+
+# ansible-galaxy collection install ansible.posix
+# vim apache-play.yaml
+>
+
+---
+- name: configure apache with vars
+  hosts: all
+  vars:
+   - web_server: httpd
+   - my_service: httpd
+   - destination: /var/www/html/index.html
+   - my_content: "I am learning devops"
+   - my_rule: http
+   - my_firewalld: firewalld
+  tasks:
+    - name: install apache
+      dnf:
+        name: "{{ web_server }}"
+        state: present
+    - name: started apache service
+      systemd:
+        name: "{{ my_service }}"
+        state: started
+        enabled: true
+    - name: create an index.html into that path
+      copy:
+        content: "{{ my_content }}"
+        dest: "{{ destination }}"
+    - name: configure apache firewalld
+      dnf:
+        name: "{{ my_firewalld }}"
+        state: present
+    - name: started firewalld
+      systemd:
+        name: "{{ my_firewalld }}"
+        state: started
+        enabled: true
+    - name: add http rule in firewalld
+      firewalld:
+        service: "{{ my_rule }}"
+        immediate: true
+        permanent: true
+        state: enabled
+...
+
+# ansible-playbook apache-play.yaml
+# curl http://localhost
+
+
+________________________
+________________________
+
+# free -h
+# cat /proc.cpuinfo
+#
+
+
+
+_____________________
+_____________________
+
+https://github.com/sanjayguruji/ansible-code/blob/main/k8s-master-pkg.yaml
+
+/Fire the EC2 instance named k8s
+/copy the ssh public key from controller paste in .ssh/authorized_keys of new instance
+/
+
+# hostnamectl set-hostname k8s.example.com
+# bash
+# ip a s
+# hostname
+> Copy ip and hostname 
+> paste in vim/etc/hosts in controller and k8s
+
+> then in controller
+ #  vim hosts
+ > add k8s.example.com in new group and comment out previous ones
+
+ # ansible all -m ping
+
+____________________
+CONFIGURE KUBERNETES
+____________________
+
+https://github.com/sanjayguruji/ansible-code/blob/main/k8s-master-pkg.yaml
+
+# vim master-k8s.yaml
+>
+- name: Kubernetes Dependencies
+  hosts: all
+  become: yes
+  tasks:
+    - name: Updates
+      apt:
+        update_cache: yes
+
+    - name: Reboot
+      reboot:
+
+    - name: Disable SWAP
+      shell: |
+        swapoff -a
+
+    - name: Disable SWAP in fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+        replace: '# \1'
+
+    - name: Create an empty file for the containerd module
+      copy:
+        content: ""
+        dest: /etc/modules-load.d/containerd.conf
+        force: no
+
+    - name: Configure modules for containerd
+      blockinfile:
+        path: /etc/modules-load.d/containerd.conf
+        block: |
+          overlay
+          br_netfilter
+
+    - name: Create an empty file for K8S sysctl parameters
+      copy:
+        content: ""
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+        force: no
+
+    - name: Configure sysctl parameters for K8S
+      lineinfile:
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        line: "{{ item }}"
+      with_items:
+        - "net.bridge.bridge-nf-call-iptables  = 1"
+        - "net.ipv4.ip_forward                 = 1"
+        - "net.bridge.bridge-nf-call-ip6tables = 1"
+
+    - name: Apply sysctl parameters
+      command: sysctl --system
+
+    - name: Install APT Transport HTTPS
+      apt:
+        name: apt-transport-https
+        state: present
+
+    - name: Add Docker apt-key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker-apt-keyring.asc
+        mode: "0644"
+        force: true
+
+    - name: Add Docker's APT repo
+      apt_repository:
+        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }} signed-by=/etc/apt/keyrings/docker-apt-keyring.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        update_cache: yes
+
+    - name: Add Kubernetes apt-key
+      get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.asc
+        mode: "0644"
+        force: true
+
+    - name: Add Kubernetes APT repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v3.32/deb/ /"
+        state: present
+        update_cache: yes
+
+    - name: Install containerd
+      apt:
+        name: containerd.io
+        state: present
+
+    - name: Create containerd directory
+      file:
+        path: /etc/containerd
+        state: directory
+
+    - name: Add containerd configuration
+      shell: /usr/bin/containerd config default > /etc/containerd/config.toml
+
+    - name: Configuring Systemd cgroup driver for containerd
+      lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: "            SystemdCgroup = false"
+        line: "            SystemdCgroup = true"
+
+    - name: Enable the containerd service and start service
+      systemd:
+        name: containerd
+        state: restarted
+        enabled: yes
+        daemon-reload: yes
+
+    - name: Install Kubelet
+      apt:
+        name: kubelet=1.32.*
+        state: present
+        update_cache: true
+
+    - name: Install Kubeadm
+      apt:
+        name: kubeadm=1.32.*
+        state: present
+
+    - name: Enable the Kubelet service
+      service:
+        name: kubelet
+        enabled: yes
+
+    - name: Load br_netfilter kernel module
+      modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Set bridge-nf-call-iptables
+      sysctl:
+        name: net.bridge.bridge-nf-call-iptables
+        value: 1
+
+    - name: Set ip_forward
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: 1
+
+    - name: Reboot
+      reboot:
+
+- hosts: all
+  become: yes
+  tasks:
+    - name: Install Kubectl
+      apt:
+        name: kubectl=1.32.*
+        state: present
+        force: yes
+
+...
+
+# ansible-galaxy collection install community.general
+# ansible-playbook master-k8s.yaml --syntax-check
+# ansible-playbook master-k8s.yaml
+# yum install python3-apt -y
+
+# vim k8s-init.yaml
+
+>
+- hosts: masters
+  become: yes
+  tasks:
+    - name: initialize K8S cluster
+      shell: kubeadm init
+
+    - name: create .kube directory
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+
+    - name: copy admin.conf to user kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        remote_src: yes
+
+    - name: install Pod network
+      become: yes
+      shell: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml >> pod_network_setup.txt
+      args:
+        chdir: $HOME
+        creates: pod_network_setup.txt
+
+# ansible-playnopok k8s-int.yaml --syntax-check
+# ansible-playnopok k8s-int.yaml
