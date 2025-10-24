@@ -1,0 +1,78 @@
+DAY 15 - 10th October
+
+-> Create  EC2 instance with Ubuntu Image - Localhost
+_____________
+@ Localhost @
+_____________
+
+-> https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+
+-> https://k21academy.com/docker-kubernetes/accessing-remote-kubeadm-cluster/
+
+# hostnamectl set-hostname local.example.com
+# bash
+#
+______________________________
+kOps Kubernetes //Incomplete
+______________________________
+-> https://kops.sigs.k8s.io/getting_started/aws/
+# rm -rf .kube
+GitHub Repo - https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/k8s-cluster-with-kops
+# delete cluster dev.k8s.debaprasad.in
+
+_________________________________________
+After Coffee Break 2
+//Host EKS CLUSTER via EKSCTL 
+__________________________________________
+Reference : https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/Eks-cluster-creating
+
+EC2 : eks-host , ubuntu , new Sg, t3.micro
+
+> Create IAM user rule 
+with policies
+  - AmazonEC2ContainerRegistryFullAccess
+  - AmazonEKSClusterPolicy
+  - IAMFullAccess
+> Modify the eks-host and attach the rule 
+> Create IAM user with AdministratorAccess
+
+//subnets should span at least two of these availability zones: us-east-1a, us-east-1b, us-east-1c, us-east-1d, us-east-1f.!!!
+
+> Cluster Creation
+hostnamectl set-hostname eks-host.example.com
+bash
+apt-get update -y
+apt install unzip -y
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip 
+sudo ./aws/install
+aws configure
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+eksctl version
+Install Kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+ssh-keygen
+eksctl create cluster --name my-cluster-01 --region us-east-1 --version 1.32 --vpc-public-subnets subnet-08b6065a123cdaf14,subnet-040bbad1086f2f1e7 --without-nodegroup
+ 
+-> check on AWS > EKS >
+
+# eksctl create nodegroup \
+  --cluster my-cluster-01 \
+  --region us-east-1 \
+  --name my-node-group \
+  --node-ami-family Ubuntu2204 \
+  --node-type t3.small \
+  --subnet-ids subnet-08b6065a123cdaf14,subnet-040bbad1086f2f1e7 \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 4 \
+  --ssh-access \
+  --ssh-public-key /root/.ssh/id_ed25519.pub
+
+# kubectl get nodes
+
+ When You want to delete cluster
+ eksctl delete cluster --name my-cluster
