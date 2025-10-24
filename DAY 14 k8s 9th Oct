@@ -1,0 +1,231 @@
+DAY 14 - 9th October
+
+
+__________________________________________
+Create Cluster Using script
+__________________________________________
+
+> Launch 3 EC2 instances : Ubuntu 22
+ 	1.control-plane : c7i-flex.large : us e 1a : New SG
+ 	k8s_sg : 15gib
+ 	2.node-one : t3.small : us-east-1d : SG - k8s_sg : 12 	gib
+ 	3.node-one :          : us-east-1a :
+SG - https://kubernetes.io/docs/reference/networking/ports-and-protocols/
+
+____________________
+@ Controller-plane @
+____________________
+
+> Sh file:
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/c9ebc93e41008d603afbc387d7ba2c3648bd63a7/New-controll-plane.sh
+
+# hostnamectl set-hostname controller-plane.example.com
+# bash
+# vim controller-plane.sh
+
+> Copy the script from GitHub and paste inside vim
+
+# chmod +x controller-plane.sh
+# ./controller-plane.sh
+
+____________
+@ Node-one @
+____________
+
+> Sh file:
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/9d2a3b8f1d2517ba182d1bed892ff45c414fd489/New-worker-node.sh
+
+# hostnamectl set-hostname node-one.example.com
+# bash
+# vim node-one.sh
+
+> Copy the script from GitHub and paste inside vim
+ and then remove the existing token, copy the token from controller-plane and paste
+
+# chmod +x node-one.sh
+# ./node-one.sh
+
+____________
+@ Node-one @
+____________
+
+> Sh file:
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/9d2a3b8f1d2517ba182d1bed892ff45c414fd489/New-worker-node.sh
+
+# hostnamectl set-hostname node-two.example.com
+# bash
+# vim node-two.sh
+
+> Copy the script from GitHub and paste inside vim
+ and then remove the existing token, copy the token from controller-plane and paste
+
+# chmod +x node-two.sh
+# ./node-two.sh
+
+
+________________
+DEPLOYMENT
+_______________
+
+
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/ - Checked
+
+> controllers/nginx-deployment.yaml > yaml file name
+# mkdir /k8s-code/
+# cd /k8s-code
+# vim my-deploy.yaml
+"
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+"
+
+# kubectl apply -f my-deploy.yaml
+# kubectl get deploy
+# kubectl get rs
+# kubectl get po
+
+> Deployment autoscaling in Kubernetes : HPA >
+___________________________________________________________
+
+-> set replicas : 1 in my-deploy.yaml
+
+# kubectl apply -f my-deploy.yaml
+# kubectl get po
+
+# vim deployment-hpa.yaml
+> Follow Picture indentation
+"
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-app-hpa
+spec:
+scaleTargetRef:
+    apiVersion: apps/v1
+kind: Deployment
+    name: nginx-deployment
+minReplicas: 4
+maxReplicas: 10
+metrics:
+- type: Resource
+resource:
+        name: cpu
+target:
+          type: Utilization
+          averageUtilization: 25
+"
+
+# kubectl apply -f deployment-hpa.yaml
+# watch kubectl get po
+
+Updating a Deployment
+________________________________
+
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+
+# kubectl get deploy
+# kubectl describe deploy <deployment-name>
+# kubectl get pod
+# kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.16.1
+# watch kubectl get pods
+# kubectl rollout status deployment/nginx-deployment
+# kubectl describe deployments
+# kubectl get deploy
+# kubectl describe deploy nginx-deployment
+# kubectl get pod
+# kubectl set image deployment/nginx-deployment nginx=nginx:1.161
+# kubectl rollout status deployment/nginx-deployment
+# kubectl get pod
+# kubectl describe deployment
+# kubectl rollout history deployment/nginx-deployment
+# kubectl set image deployment/nginx-deployment nginx=nginx:1.16.1
+# kubectl get pod
+# kubectl rollout status deployment/nginx-deployment
+
+
+//Containerization based on : CGroup & Namespace
+
+UAT - User Acceptance
+
+
+Namespace
+______________
+
+
+# kubectl get namespace
+
+//Creating a new namespace
+
+
+# vim my-namespace.yaml
+
+
+"
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: <insert-namespace-name-here>
+"
+# kubectl create -f ./my-namespace.yaml
+# kubectl get namespaces
+# kubectl create namespace prod
+# kubectl get ns
+# kubectl delete namespaces demo-ns
+# kubectl get ns
+
+
+# vim sanjaya-pod.yaml
+"
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-app
+  namespace: prod
+spec:
+  containers:
+  - name: apache
+    image: nginx:1.14
+"
+
+
+# kubectl apply -f sanjaya-pod.yaml
+# kubectl get pod
+# kubectl get pod -n prod
+# kubectl create ns dev-env
+# vim new-pod.yaml
+"
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-app
+spec:
+  containers:
+  - name: apache
+    image: nginx:1.14
+"
+
+# kubectl apply -f new-pod.yaml --namespace=dev-env
+# kubectl get pod -n dev-env
