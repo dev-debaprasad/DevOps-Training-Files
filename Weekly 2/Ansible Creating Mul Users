@@ -92,3 +92,105 @@ ___________
 
 # tail /etc/passwd
 
+
+_______
+VARS
+_______
+Creating EC2 instance using Ansible
+___________________________________
+https://github.com/sanjayguruji/ansible-code/blob/main/Create-AWS-Ec2.yaml
+
+//inside anisible dir
+
+-> # yum install awscli
+# yum install pip
+# pip install boto3
+# aws configure // IAM  - Admin access
+# vim hosts
+>
+ 
+[localhost]
+localhost
+localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+
+# vim creds.yaml
+> 
+aws_access_key: <add own>
+aws_secret_key: <add own>
+
+# vim ec2.yaml
+https://github.com/sanjayguruji/ansible-code/blob/main/Create-AWS-Ec2.yaml
+
+>
+
+---
+- name: creating ec2 instance
+  hosts: localhost
+  vars_files:
+
+      - creds.yaml
+  tasks:
+        - name: creating Ec2 instance via Ansible
+          amazon.aws.ec2_instance:
+            name: k8s-master
+            instance_type: t3.micro
+            image_id: ami-052064a798f08f0d3
+            vpc_subnet_id: subnet-08b6065a123cdaf14
+            security_group: sg-0a35908e41f9ebf34
+            key_name: ansible
+            region: us-east-1
+            count: 1
+            state: present
+
+
+# ansible-galaxy collection install amazon.aws
+# ansible-playbook ec2.yaml
+
+
+// Apache server 
+# vim apache-play.yaml
+>
+
+---
+- name: configure apache with vars
+  hosts: all
+  vars:
+   - web_server: httpd
+   - my_service: httpd
+   - destination: /var/www/html/index.html
+   - my_content: "I am learning devops"
+   - my_rule: http
+   - my_firewalld: firewalld
+  tasks:
+    - name: install apache
+      dnf:
+        name: "{{ web_server }}"
+        state: present
+    - name: started apache service
+      systemd:
+        name: "{{ my_service }}"
+        state: started
+        enabled: true
+    - name: create an index.html into that path
+      copy:
+        content: "{{ my_content }}"
+        dest: "{{ destination }}"
+    - name: configure apache firewalld
+      dnf:
+        name: "{{ my_firewalld }}"
+        state: present
+    - name: started firewalld
+      systemd:
+        name: "{{ my_firewalld }}"
+        state: started
+        enabled: true
+    - name: add http rule in firewalld
+      firewalld:
+        service: "{{ my_rule }}"
+        immediate: true
+        permanent: true
+        state: enabled
+...
+
+# ansible-playbook apache-play.yaml
+# curl http://localhost
