@@ -1,0 +1,43 @@
+___________
+Docker Pull 
+___________
+
+1. nginx
+
+# yum install docker
+# docker info
+# systemctl start docker
+# systemctl enable docker
+# docker pull nginx
+# docker run -it --name nginx-app -p 8080:80 nginx:latest /bin/bash
+> inside container
+# service nginx start
+# cd /usr/share/nginx/html
+# echo "I'm Dev" >index.html
+# service nginx start
+
+> Copy public IP > paste along with port
+!! Allow port in SG
+
+2. Ubuntu
+
+# docker pull ubuntu
+# docker run -it --name web-app ubuntu:latest /bin/bash
+> inside Container
+# apt update -y
+# apt install apache2 -y
+# cd /var/www/html
+# echo "this is my web-app running on docker" > index.html
+# service apache2 start
+# exit
+# docker start web-app
+# docker attach web-app
+ > CTRL p + q
+# docker inspect web-app | less
+ > Copy the ipv4 in the bottom
+# docker attach web-app
+# service apache2 start
+> CTRL p + Q
+# curl http://
+
+
