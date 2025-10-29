@@ -1,0 +1,36 @@
+Create EC2 instance - Docker host
+-> Subnet - 1a
+-> SG - Docker-Sg
+-> 12Gib
+--> Launch Instance
+
+# hostnamectl set-hostname docker.example.com
+# bash
+# yum install docker
+# docker info
+# systemctl start docker
+# systemctl enable docker
+# docker pull ubuntu
+# docker run -it --name web-app -p 8080:80 ubuntu:latest /bin/bash
+> inside Container
+# apt update -y
+# apt install apache2 -y
+# cd /var/www/html
+# echo "this is my web-app running on docker" > index.html
+# service apache2 start
+
+
+// Nginx
+# docker pull nginx
+# docker run -it --name nginx-app -p 8080:80 nginx:latest /bin/bash
+> inside container
+# service nginx start
+# cd /usr/share/nginx/html
+# echo "I'm Dev" >index.html
+# service nginx start
+
+> Copy public IP > paste along with port
+!! Allow port in SG
+
+> Copy public IP > paste along with port
+!! Allow port in SG
