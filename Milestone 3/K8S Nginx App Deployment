@@ -1,0 +1,119 @@
+// nginx deployment in k8s cluster
+
+
+//Host EKS CLUSTER via EKSCTL 
+__________________________________________
+Reference : https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/main/Eks-cluster-creating
+
+EC2 : eks-host , ubuntu , new Sg, t3.micro
+
+> Create IAM user rule 
+with policies
+  - AmazonEC2ContainerRegistryFullAccess
+  - AmazonEKSClusterPolicy
+  - IAMFullAccess
+> Modify the eks-host and attach the rule 
+> Create IAM user with AdministratorAccess
+
+//subnets should span at least two of these availability zones: us-east-1a, us-east-1b, us-east-1c, us-east-1d, us-east-1f.!!!
+
+> Cluster Creation
+hostnamectl set-hostname eks-host.example.com
+bash
+apt-get update -y
+apt install unzip -y
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip 
+sudo ./aws/install
+aws configure
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+eksctl version
+Install Kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+ssh-keygen
+eksctl create cluster --name my-cluster-01 --region us-east-1 --version 1.32 --vpc-public-subnets subnet-08b6065a123cdaf14,subnet-040bbad1086f2f1e7 --without-nodegroup
+ 
+-> check on AWS > EKS >
+
+eksctl create nodegroup \
+  --cluster my-cluster-01 \
+  --region us-east-1 \
+  --name my-node-group \
+  --node-ami-family Ubuntu2204 \
+  --node-type t3.small \
+  --subnet-ids subnet-0320742c6dc0432a9,subnet-001001c45f8d365bf \
+  --nodes 1 \
+  --nodes-min 1 \
+  --nodes-max 2 \
+  --ssh-access \
+  --ssh-public-key /root/.ssh/id_rsa.pub
+
+// if any error occurs then copy the above part from sir's repo
+
+# kubectl get nodes
+
+________________
+DEPLOYMENT
+_______________
+
+
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/ - Checked
+
+> controllers/nginx-deployment.yaml > yaml file name
+# mkdir /k8s-code/
+# cd /k8s-code
+# vim my-deploy.yaml
+"
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+"
+> !!Copy the above from the link!!
+
+# kubectl apply -f my-deploy.yaml
+# kubectl get deploy
+# kubectl get pods
+
+//Create nginx-service.yaml
+# vim nginx-service.yaml
+>
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: web
+
+spec:
+  selector:
+    app: web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
+>
+# kubectl apply -f nginx-service.yaml
+> Copy Public IP
