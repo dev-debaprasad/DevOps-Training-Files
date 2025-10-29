@@ -1,0 +1,96 @@
+
+Creating Multiple Users using Ansible
+
+> Create an ec2 instance
+	: ansible-server 
+	: Redhat
+  	: 12 gib gp3
+	: Ansible-SG
+
+__________________
+@ ansible-server @
+__________________
+
+# hostnamectl set-hostname ans-controller.example.com
+# bash
+# yum update -y
+# hostname
+# ip a s
+# yum install vim
+
+
+
+> Create an EC2 Instance 
+	: ansible-one
+	: Amazon Linux 
+	: T3.Micro 
+	: 10Gib
+__________________
+@ ansible-one @
+__________________
+
+# hostnamectl set-hostname ans-one.example.com
+# bash
+# hostname
+# ip  a s
+
+Now add ip<space>hostname in both the terminals
+
+# vim /etc/hosts
+_______________________
+
+@ in both terminals @
+______________________
+# ssh-keygen
+> copy public key
+> paste in .ssh/authorized_keys
+
+
+
+__________________
+@ ansible-server @
+__________________
+
+# ssh root@ans-one.example.com 
+# yum install ansible-core
+# ansible --version
+# cd /etc/ansible/
+# ll
+# vim ansible.cfg
+> Paste from
+> https://github.com/sanjayguruji/ansible-code/blob/main/ansible.cfg
+# vim hosts
+> paste
+[dev-server]
+ans-one.example.com
+
+# ansible all --list-hosts
+# vim users.yaml
+>
+---
+- name: Creating Users
+  hosts: all
+  tasks:
+
+
+    - name: Creating Users
+      user:
+        name: "{{ item }}"
+        state: present
+      with_items:
+         - Dev
+         - Razer
+
+
+>
+# ansible-playbook users.yaml --syntax-check
+# ansible-playbook users.yaml -C
+# ansible-playbook users.yaml
+
+___________
+@ ans-one @
+___________
+
+# tail /etc/passwd
+
+
