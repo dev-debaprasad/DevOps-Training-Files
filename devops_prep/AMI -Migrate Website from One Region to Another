@@ -1,0 +1,25 @@
+One website present in a region We have to Migrate it to another region
+
+> Go to N. Virginia
+> launch an EC2 instance
+  > name - dev-server-v
+  > SG allow port 80 and 22
+  >fire the instance using ssh
+
+@ dev-server-v @
+
+# sudo su -
+# yum install httpd
+# cd /var/www/html
+# cat > index.html
+ctrl D
+# systemctl start httpd
+# systemctl enable httpd
+# curl http://localhost
+
+-> Stop the instance > Action > Image & Templates > Create Image
+->->Copy AMI to another region
+->AMIs->Select ->Action ->Copy AMI -> Destination Region -> select region ->Copy AMI
+
+-> Go to Ohio > AMI > Select > Create Instance From AMI 
+-> Launch Instance -> Wait -> Copy public ip paste with :80

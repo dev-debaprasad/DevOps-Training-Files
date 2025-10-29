@@ -1,0 +1,112 @@
+__________________________________________
+Create Cluster Using script
+__________________________________________
+
+> Launch 2 EC2 instances : Ubuntu 22
+ 	1.control-plane : c7i-flex.large : us e 1a : New SG
+ 	k8s_sg : 15gib
+ 	2.node-one : t3.small : us-east-1d : SG - k8s_sg : 12 	gib
+
+SG - https://kubernetes.io/docs/reference/networking/ports-and-protocols/
+
+____________________
+@ Controller-plane @
+____________________
+
+> Sh file:
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/c9ebc93e41008d603afbc387d7ba2c3648bd63a7/New-controll-plane.sh
+
+# hostnamectl set-hostname controller-plane.example.com
+# bash
+# vim controller-plane.sh
+
+> Copy the script from GitHub and paste inside vim
+
+# chmod +x controller-plane.sh
+# ./controller-plane.sh
+
+____________
+@ Node-one @
+____________
+
+> Sh file:
+
+https://github.com/sanjayguruji/Sanjaya-K8S-Code/blob/9d2a3b8f1d2517ba182d1bed892ff45c414fd489/New-worker-node.sh
+
+# hostnamectl set-hostname node-one.example.com
+# bash
+# vim node-one.sh
+
+> Copy the script from GitHub and paste inside vim
+ and then remove the existing token, copy the token from controller-plane and paste
+
+# chmod +x node-one.sh
+# ./node-one.sh
+
+_________________________
+Replica-Set in Kubernetes
+_______________________________________
+
+# vim devops-rs.yaml
+> https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+"
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+ name: devops-rs
+ labels:
+  app: devops-rs
+  tier: prod
+spec:
+ replicas: 3
+ selector:
+  matchLabels:
+   tier: prod
+ template:
+  metadata:
+   labels:
+    tier: prod
+  spec:
+   containers:
+    - name: web-apache
+      image: nginx
+
+"
+
+# mv devops-rs.yaml /k8s-code/
+# cd /k8s-code/
+# kubectl apply -f devops-rs.yaml
+# kubectl get pod
+# kubectl get rs
+# kubectl describe rs devops-rs
+
+_________________________
+HORIZONTAL SCALING- HPA
+_________________________
+
+# vim my-hpa.yaml
+> https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/ 
+> hpa-rs.yaml -> Refer to this file on the documentation & use only the names from below.
+"
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: devops-scaler
+spec:
+scaleTargetRef:
+apiVersion: apps/v1
+kind: ReplicaSet
+    name: devops-rs
+  minReplicas: 3
+  maxReplicas: 10
+targetCPUUtilizationPercentage: 25
+
+"
+
+# kubectl apply -f my-hpa.yaml
+-> check # kubectl get pod in Frozen terminal
+# kubectl get hpa
+
+
+# kubectl delete hpa devops-scaler
