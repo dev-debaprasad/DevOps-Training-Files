@@ -1,6 +1,6 @@
 Reference : https://medium.com/@olayinkasamuel44/how-to-deploy-a-static-website-to-s3-bucket-using-github-actions-ci-script-fa1acc932fbd
 
-Create a new repository
+Create a new repository and create index.html file
 > Create a IAM User and setup creds with GitHub Action
 > GitHub > Repo Settings > Secrets and variables > Actions
  > New Repository Secret > Add :
