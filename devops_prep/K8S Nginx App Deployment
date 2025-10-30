@@ -116,4 +116,4 @@ spec:
   type: NodePort
 >
 # kubectl apply -f nginx-service.yaml
-> Copy Public IP
+> Copy Public IP of new instance AND paste along with :80
