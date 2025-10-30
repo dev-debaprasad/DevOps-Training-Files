@@ -113,7 +113,9 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
-  type: NodePort
+  type: LoadBalancer
 >
 # kubectl apply -f nginx-service.yaml
-> Copy Public IP of new instance AND paste along with :80
+# kubectl get svc
+> Copy the public IP also allow the port assgined to the loadbalancer in new instance's security group.
+> Paste the loadbalamcer's public IP along with the assigned port
