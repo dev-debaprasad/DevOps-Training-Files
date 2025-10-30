@@ -1,0 +1,205 @@
+@ Terra-Server @
+______________
+
+// Creating instance with Amazon Linux AMI
+
+⦁	Amazon Linux
+⦁	T3.micro
+⦁	12gib gp2
+
+# hostnamectl set-hostname terra.example.com
+# bash
+# sudo dnf install -y dnf-plugins-core
+# sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+# sudo dnf -y install terraform
+# terraform -v
+# aws configure
+// AWS_VPC
+
+https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc
+
+# cd
+# mkdir /aws-vpc-code
+# cd /aws-vpc-code
+# vim network.tf
+
+>
+
+resource "aws_vpc" "prod-vpc" {
+  cidr_block = "10.0.0.0/16"
+}
+
+
+## This is for IGW
+
+resource "aws_internet_gateway" "prod-igw" {
+  vpc_id = aws_vpc.prod-vpc.id
+
+  tags = {
+    Name = "prod-vpc"
+  }
+}
+
+
+## THis is for public subnet
+
+resource "aws_subnet" "public-subnet" {
+  vpc_id     = aws_vpc.prod-vpc.id
+  cidr_block = "10.0.0.0/24"
+
+  tags = {
+    Name = "public-subnet"
+  }
+}
+
+## THis is for private subnet
+
+resource "aws_subnet" "private-subnet" {
+  vpc_id     = aws_vpc.prod-vpc.id
+  cidr_block = "10.0.1.0/24"
+
+  tags = {
+    Name = "private-subnet"
+  }
+}
+
+## THis is for security group
+resource "aws_security_group" "test_access" {
+  name        = "test_access"
+  vpc_id      = aws_vpc.prod-vpc.id
+  description = "allow ssh and http"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security Group Ends Here
+
+# Creating Route table for public-subnet
+
+resource "aws_route_table" "public-rt" {
+  vpc_id = aws_vpc.prod-vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.prod-igw.id
+  }
+}
+
+# Public route table associate
+
+resource "aws_route_table_association" "publiv-rt-asso" {
+  subnet_id      = aws_subnet.public-subnet.id
+  route_table_id = aws_route_table.public-rt.id
+}
+
+## ec2 in public subnet
+
+# Private server
+resource "aws_instance" "db-server" {
+  ami             = "ami-0341d95f75f311023"
+  subnet_id       = aws_subnet.public-subnet.id
+  instance_type   = "t3.micro"
+  security_groups = ["${aws_security_group.test_access.id}"]
+  key_name        = "terra-admin"
+  tags = {
+    Name     = "test-World"
+    Stage    = "testing"
+    Location = "chennai"
+  }
+
+}
+
+##create an EIP for EC2
+resource "aws_eip" "sanjay-ec2-eip" {
+  instance = aws_instance.db-server.id
+}
+
+# add ssh key
+
+resource "aws_key_pair" "terra-admin" {
+  key_name   = "terra-admin" 
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCZlb9rxK1K9lZK6op7roFNfE3tq5wZCJgUtAMTPNpHvtqLvP0tTBZOPsigAU18Zpu6gEYcZ6Js0HF1HwAkuwLsFqRP9XItcryq5HoYkQDt0OhZX2sY28NNBHyQRHjidiZyBQhHilbmbIEq03peElDiYA+VEyyac2dpf5nuxbhTqXNG0ugFRP7lYwUqoGO8/nux49N01Vy5sXcJ+LTmQcMVY5cPqn3pbGOMvW0EvEvpcTql7OJkHCBjf2Z5NUbViP/RfTHZIN4jxmU3X0znxOklesBIz/+3Ijx54Ai74EV3MH/HZ3ksQ10vjfUEYAspIuUShpQSTrAWXws0HT3WsiGKbY4cHRNnad8uPrwO97dwdem0ZaEDM+OuE+AKRPENkzfguy+LXXfbjpl3i5Vv6pGaLc7fKw1/hwtbj9+HPISoTvDcchmk0Ti5NMfwl62p0TBhxmjxSS7RWY7g8wIedNZBdpcEBSBaq28W3Yl465jIYA+GHSH0+1p5cz6ikYDXMDM= root@terra.example.com"
+}
+
+##create a public ip for Nat gateway
+
+resource "aws_eip" "nat-eip" {
+}
+
+# Create NAT gateway
+
+resource "aws_nat_gateway" "my-ngw" {
+  allocation_id = aws_eip.nat-eip.id
+  subnet_id     = aws_subnet.public-subnet.id
+}
+
+resource "aws_route_table" "private-rt" {
+  vpc_id = aws_vpc.prod-vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.my-ngw.id
+  }
+
+
+  tags = {
+    Name = "private-rt"
+  }
+}
+
+##route Tatable assosication code
+resource "aws_route_table_association" "private-asso" {
+  subnet_id      = aws_subnet.private-subnet.id
+  route_table_id = aws_route_table.private-rt.id
+}
+
+## Ec2 code
+resource "aws_instance" "deb-server" {
+  ami             = "ami-0341d95f75f311023"
+  subnet_id       = aws_subnet.public-subnet.id
+  instance_type   = "t3.micro"
+  security_groups = ["${aws_security_group.test_access.id}"]
+  key_name        = "terra-admin"
+  tags = {
+    Name     = "server1"
+    Stage    = "testing"
+    Location = "chennai"
+  }
+
+}
+ 
+
+>
+
+//Change the "# add ssh key part"
+// Take a duplicate terminal and
+# cd
+# ssh-keygen -f terra-admin
+# cd .ssh
+# cat terra-admin.pub
+ > Copy and change in "# add ssh key" in network.tf
+
+# terraform init
+# terraform fmt
+# terraform validate
+# terraform plan
+# terraform apply
